@@ -20,10 +20,10 @@ Or install it yourself as:
 
 Basic convolution:
 
-   a = NArray[0.3,0.4,0.5]
-   b = NArray[1.3, -0.5]
-   c = a.convolve( b )
-   => NArray.float(2): [ 0.19, 0.27 ]
+    a = NArray[0.3,0.4,0.5]
+    b = NArray[1.3, -0.5]
+    c = a.convolve( b )
+    => NArray.float(2): [ 0.19, 0.27 ]
 
 ## Contributing
 
