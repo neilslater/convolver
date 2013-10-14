@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["slobo777@gmail.com"]
   spec.description   = %q{Convolution for NArray}
   spec.summary       = %q{Convolution for NArray}
-  spec.homepage      = "http://github.com/neilslater/see_cat"
+  spec.homepage      = "http://github.com/neilslater/convolver"
   spec.license       = "MIT"
 
   spec.add_dependency "narray", ">= 0.6.0.8"
