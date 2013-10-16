@@ -6,7 +6,7 @@
 // This is copied from na_array.c, with safety checks and temp vars removed
 inline int na_quick_idxs_to_pos( int rank, int *shape, int *idxs ) {
   int i, pos = 0;
-  for ( i = rank; (i--)>0; ) {
+  for ( i = rank - 1; i >= 0; i-- ) {
     pos = pos * shape[i] + idxs[i];
   }
   return pos;
@@ -21,6 +21,14 @@ inline void na_quick_pos_to_idxs( int rank, int *shape, int pos, int *idxs ) {
   }
   return;
 }
+
+inline int size_from_shape( int rank, int *shape ) {
+  int size = 1;
+  int i;
+  for ( i = 0; i < rank; i++ ) { size *= shape[i]; }
+  return size;
+}
+
 
 /* Ruby versions of above, to test logic
 def na_quick_idxs_to_pos( rank, shape, idxs )
@@ -46,6 +54,36 @@ idxs = []
  => true
 */
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Convolve method 1. Iterate through output pos and kernel pos, in sequence, calculate
+//                     array indices for input from those, resolve back to pos value for each multiply
+//
+
+void convole_method_01(
+    int in_rank, int *in_shape, float *in_ptr,
+    int kernel_rank, int *kernel_shape, float *kernel_ptr,
+    int out_rank, int *out_shape, float *out_ptr ) {
+  int i, j, k, in_size, kernel_size, out_size, offset;
+  int in_idx[16], kernel_idx[16], out_idx[16];
+
+  in_size = size_from_shape( in_rank, in_shape );
+  kernel_size = size_from_shape( kernel_rank, kernel_shape );
+  out_size = size_from_shape( out_rank, out_shape );
+
+  for ( i = 0; i < out_size; i++ ) {
+    register float t = 0.0;
+    na_quick_pos_to_idxs( out_rank, out_shape, i, out_idx );
+    for ( j = 0; j < kernel_size; j++ ) {
+      na_quick_pos_to_idxs( kernel_rank, kernel_shape, j, kernel_idx );
+      for ( k = 0; k < in_rank; k++ ) { in_idx[k] = out_idx[k] + kernel_idx[k]; }
+      offset = na_quick_idxs_to_pos( in_rank, in_shape, in_idx );
+      t += in_ptr[ offset ] * kernel_ptr[ j ];
+    }
+    out_ptr[i] = t;
+  }
+  return;
+}
 
 // To hold the module object
 VALUE Convolver = Qnil;
@@ -53,13 +91,8 @@ VALUE Convolver = Qnil;
 static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   struct NARRAY *na_a, *na_b, *na_c;
   volatile VALUE val_a, val_b, val_c;
-  int target_rank, i, j, k, offset;
+  int target_rank, i;
   int target_shape[16];
-  float *in_a, *in_b, *out;
-  register float t;
-  int out_idx[16];
-  int in_a_idx[16];
-  int in_b_idx[16];
 
   val_a = na_cast_object(a, NA_SFLOAT);
   GetNArray( val_a, na_a );
@@ -91,23 +124,10 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   val_c = na_make_object( NA_SFLOAT, target_rank, target_shape, CLASS_OF( val_a ) );
   GetNArray( val_c, na_c );
 
-  // Get quick pointers
-  in_a = (float*) na_a->ptr;
-  in_b = (float*) na_b->ptr;
-  out = (float*) na_c->ptr;
-
-  // Calculate output in pointer sequence order, derive dimension data from that.
-  for ( i = 0; i < na_c->total; i++ ) {
-    t = 0.0;
-    na_quick_pos_to_idxs( target_rank, target_shape, i, out_idx );
-    for ( j = 0; j < na_b->total; j++ ) {
-      na_quick_pos_to_idxs( target_rank, na_b->shape, j, in_b_idx );
-      for ( k = 0; k < target_rank; k++ ) { in_a_idx[k] = out_idx[k] + in_b_idx[k]; }
-      offset = na_quick_idxs_to_pos( target_rank, na_a->shape, in_a_idx );
-      t += in_a[ offset ] * in_b[ j ];
-    }
-    out[i] = t;
-  }
+  convole_method_01(
+    target_rank, na_a->shape, (float*) na_a->ptr,
+    target_rank, na_b->shape, (float*) na_b->ptr,
+    target_rank, target_shape, (float*) na_c->ptr );
 
   return val_c;
 }
