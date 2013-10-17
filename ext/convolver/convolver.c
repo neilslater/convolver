@@ -134,12 +134,17 @@ void convole_method_02(
   calc_co_increment( in_rank, in_shape, kernel_shape, kernel_co_incr );
 
   i_offset = 0;
-  for ( i = 0; i < out_size; i++, i_offset += out_co_incr[ ranks_for_pos_up( out_rank, out_shape, i ) ] ) {
+  for ( i = 0; i < out_size;
+       i++, i_offset += out_co_incr[ ranks_for_pos_up( out_rank, out_shape, i ) ] ) {
+
     register float t = 0.0;
     j_offset = i_offset;
-    for ( j = 0; j < kernel_size; j++, j_offset += kernel_co_incr[ ranks_for_pos_up( kernel_rank, kernel_shape, j ) ] ) {
+
+    for ( j = 0; j < kernel_size;
+         j++, j_offset += kernel_co_incr[ ranks_for_pos_up( kernel_rank, kernel_shape, j ) ] ) {
       t += in_ptr[ j_offset ] * kernel_ptr[ j ];
     }
+
     out_ptr[i] = t;
   }
   return;
