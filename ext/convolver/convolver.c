@@ -29,17 +29,15 @@ inline int size_from_shape( int rank, int *shape ) {
   return size;
 }
 
-// Assumes pos has just been incremented, returns number of indices within shape
-// other than rank0 that were incremented.
-inline int ranks_for_pos_up( int rank, int *shape, int pos ) {
-  int i;
-  int ranks = 0;
-  for ( i = 0; i < rank; i++ ) {
+// Returns number of leading 0s in the indices for a given pos
+inline int corner_rank( int max_ranks, int *shape, int pos ) {
+  int i = 0;
+  while ( i < max_ranks - 1 ) {
     if ( pos % shape[i] ) break;
     pos /= shape[i];
-    ranks++;
+    i++;
   }
-  return ranks;
+  return i;
 }
 
 // Generates co-increment steps by rank boundaries crossed, for the outer position as inner position is incremented by 1
@@ -116,7 +114,7 @@ void convole_method_01(
 //  Convolve method 2. Pre-caclulate offsets for "outer" image when convolutions step up a rank,
 //                     and detect degree of rank changes.
 //
-//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 94.48 seconds. Score: 510 - 520.
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 83.08 seconds. Score: 450- 460.
 //
 
 void convole_method_02(
@@ -135,13 +133,13 @@ void convole_method_02(
 
   i_offset = 0;
   for ( i = 0; i < out_size;
-       i++, i_offset += out_co_incr[ ranks_for_pos_up( out_rank, out_shape, i ) ] ) {
+       i++, i_offset += out_co_incr[ corner_rank( out_rank, out_shape, i ) ] ) {
 
     register float t = 0.0;
     j_offset = i_offset;
 
     for ( j = 0; j < kernel_size;
-         j++, j_offset += kernel_co_incr[ ranks_for_pos_up( kernel_rank, kernel_shape, j ) ] ) {
+         j++, j_offset += kernel_co_incr[ corner_rank( kernel_rank, kernel_shape, j ) ] ) {
       t += in_ptr[ j_offset ] * kernel_ptr[ j ];
     }
 
@@ -171,15 +169,16 @@ void convole_method_03(
 
   calc_co_increment( in_rank, in_shape, out_shape, out_co_incr );
   calc_co_increment( in_rank, in_shape, kernel_shape, kernel_co_incr );
+
   kernel_co_incr_cache = ALLOC_N( int, kernel_size );
   kernel_co_incr_cache[0] = 0;
   for ( i = 1; i < kernel_size; i++ ) {
-    kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ ranks_for_pos_up( kernel_rank, kernel_shape, i ) ];
+    kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ corner_rank( kernel_rank, kernel_shape, i ) ];
   }
 
   offset = 0;
   for ( i = 0; i < out_size;
-       i++, offset += out_co_incr[ ranks_for_pos_up( out_rank, out_shape, i ) ] ) {
+       i++, offset += out_co_incr[ corner_rank( out_rank, out_shape, i ) ] ) {
 
     register float t = 0.0;
 
