@@ -151,6 +151,50 @@ void convole_method_02(
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Convolve method 3. Memoized version of method_02
+//
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 19.84 seconds. Score: 107-111
+//
+
+void convole_method_03(
+    int in_rank, int *in_shape, float *in_ptr,
+    int kernel_rank, int *kernel_shape, float *kernel_ptr,
+    int out_rank, int *out_shape, float *out_ptr ) {
+  int i, j, in_size, kernel_size, out_size, offset;
+  int out_co_incr[16], kernel_co_incr[16];
+  int *kernel_co_incr_cache;
+
+  in_size = size_from_shape( in_rank, in_shape );
+  kernel_size = size_from_shape( kernel_rank, kernel_shape );
+  out_size = size_from_shape( out_rank, out_shape );
+
+  calc_co_increment( in_rank, in_shape, out_shape, out_co_incr );
+  calc_co_increment( in_rank, in_shape, kernel_shape, kernel_co_incr );
+  kernel_co_incr_cache = ALLOC_N( int, kernel_size );
+  kernel_co_incr_cache[0] = 0;
+  for ( i = 1; i < kernel_size; i++ ) {
+    kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ ranks_for_pos_up( kernel_rank, kernel_shape, i ) ];
+  }
+
+  offset = 0;
+  for ( i = 0; i < out_size;
+       i++, offset += out_co_incr[ ranks_for_pos_up( out_rank, out_shape, i ) ] ) {
+
+    register float t = 0.0;
+
+    for ( j = 0; j < kernel_size; j++ ) {
+      t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[ j ];
+    }
+
+    out_ptr[i] = t;
+  }
+
+  xfree( kernel_co_incr_cache );
+  return;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // To hold the module object
 VALUE Convolver = Qnil;
@@ -191,7 +235,7 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   val_c = na_make_object( NA_SFLOAT, target_rank, target_shape, CLASS_OF( val_a ) );
   GetNArray( val_c, na_c );
 
-  convole_method_02(
+  convole_method_03(
     target_rank, na_a->shape, (float*) na_a->ptr,
     target_rank, na_b->shape, (float*) na_b->ptr,
     target_rank, target_shape, (float*) na_c->ptr );
