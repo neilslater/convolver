@@ -29,6 +29,29 @@ inline int size_from_shape( int rank, int *shape ) {
   return size;
 }
 
+// Assumes pos has just been incremented, returns number of indices within shape
+// other than rank0 that were incremented.
+inline int ranks_for_pos_up( int rank, int *shape, int pos ) {
+  int i;
+  int ranks = 0;
+  for ( i = 0; i < rank; i++ ) {
+    if ( pos % shape[i] ) break;
+    pos /= shape[i];
+    ranks++;
+  }
+  return ranks;
+}
+
+// Generates co-increment steps by rank boundaries crossed, for the outer position as inner position is incremented by 1
+inline void calc_co_increment( int rank, int *outer_shape, int *inner_shape, int *co_increment ) {
+  int i, factor;
+  co_increment[0] = 1; // co-increment is always 1 in lowest rank
+  factor = 1;
+  for ( i = 0; i < rank; i++ ) {
+    co_increment[i+1] = co_increment[i] + factor * ( outer_shape[i] - inner_shape[i] );
+    factor *= outer_shape[i];
+  }
+}
 
 /* Ruby versions of above, to test logic
 def na_quick_idxs_to_pos( rank, shape, idxs )
@@ -57,7 +80,9 @@ idxs = []
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Convolve method 1. Iterate through output pos and kernel pos, in sequence, calculate
-//                     array indices for input from those, resolve back to pos value for each multiply
+//                     array indices for input from those, resolve back to pos value for each mult
+//
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 183.49 seconds. Score: 1000 (baseline)
 //
 
 void convole_method_01(
@@ -84,6 +109,43 @@ void convole_method_01(
   }
   return;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Convolve method 2. Pre-caclulate offsets for "outer" image when convolutions step up a rank,
+//                     and detect degree of rank changes.
+//
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 94.48 seconds. Score: 510 - 520.
+//
+
+void convole_method_02(
+    int in_rank, int *in_shape, float *in_ptr,
+    int kernel_rank, int *kernel_shape, float *kernel_ptr,
+    int out_rank, int *out_shape, float *out_ptr ) {
+  int i, j, in_size, kernel_size, out_size, i_offset, j_offset;
+  int out_co_incr[16], kernel_co_incr[16];
+
+  in_size = size_from_shape( in_rank, in_shape );
+  kernel_size = size_from_shape( kernel_rank, kernel_shape );
+  out_size = size_from_shape( out_rank, out_shape );
+
+  calc_co_increment( in_rank, in_shape, out_shape, out_co_incr );
+  calc_co_increment( in_rank, in_shape, kernel_shape, kernel_co_incr );
+
+  i_offset = 0;
+  for ( i = 0; i < out_size; i++, i_offset += out_co_incr[ ranks_for_pos_up( out_rank, out_shape, i ) ] ) {
+    register float t = 0.0;
+    j_offset = i_offset;
+    for ( j = 0; j < kernel_size; j++, j_offset += kernel_co_incr[ ranks_for_pos_up( kernel_rank, kernel_shape, j ) ] ) {
+      t += in_ptr[ j_offset ] * kernel_ptr[ j ];
+    }
+    out_ptr[i] = t;
+  }
+  return;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // To hold the module object
 VALUE Convolver = Qnil;
@@ -124,7 +186,7 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   val_c = na_make_object( NA_SFLOAT, target_rank, target_shape, CLASS_OF( val_a ) );
   GetNArray( val_c, na_c );
 
-  convole_method_01(
+  convole_method_02(
     target_rank, na_a->shape, (float*) na_a->ptr,
     target_rank, na_b->shape, (float*) na_b->ptr,
     target_rank, target_shape, (float*) na_c->ptr );
