@@ -32,14 +32,15 @@ inline int size_from_shape( int rank, int *shape ) {
 
 // Got help on Stack Overflow for this:
 // http://stackoverflow.com/questions/19436055/efficient-way-to-detect-rank-of-corner-in-flattened-multi-dimensional-array
-inline int corner_rank( int max_ranks, int *shape, int pos ) {
-  int i = 0;
-  while (i < max_ranks-1) { // TODO: Conditional should not be necessary
+inline int corner_rank( int *shape, int pos ) {
+  int i = 1;
+  if (pos % shape[0] || pos == 0) return 0;
+  pos /= shape[0];
+  while (1) { // TODO: Conditional should not be necessary
     if (pos % shape[i]) return i;
     pos /= shape[i];
     i++;
   }
-  return i;
 }
 
 // Generates co-increment steps by rank boundaries crossed, for the outer position as inner position is incremented by 1
@@ -135,13 +136,13 @@ void convole_method_02(
 
   i_offset = 0;
   for ( i = 0; i < out_size;
-       i++, i_offset += out_co_incr[ corner_rank( out_rank, out_shape, i ) ] ) {
+       i++, i_offset += out_co_incr[ corner_rank( out_shape, i ) ] ) {
 
     register float t = 0.0;
     j_offset = i_offset;
 
     for ( j = 0; j < kernel_size;
-         j++, j_offset += kernel_co_incr[ corner_rank( kernel_rank, kernel_shape, j ) ] ) {
+         j++, j_offset += kernel_co_incr[ corner_rank( kernel_shape, j ) ] ) {
       t += in_ptr[ j_offset ] * kernel_ptr[ j ];
     }
 
@@ -175,13 +176,14 @@ void convole_method_03(
   kernel_co_incr_cache = ALLOC_N( int, kernel_size );
   kernel_co_incr_cache[0] = 0;
   for ( i = 1; i < kernel_size; i++ ) {
-    kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ corner_rank( kernel_rank, kernel_shape, i ) ];
+    kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ corner_rank( kernel_shape, i ) ];
   }
 
-  offset = 0;
-  for ( i = 0; i < out_size; i++, offset += out_co_incr[ corner_rank( out_rank, out_shape, i ) ] ) {
-
+  offset = -1;
+  for ( i = 0; i < out_size; i++ ) {
     register float t = 0.0;
+
+    offset += out_co_incr[ corner_rank( out_shape, i ) ];
 
     for ( j = 0; j < kernel_size; j++ ) {
       t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[ j ];
