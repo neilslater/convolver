@@ -23,6 +23,5 @@ if /cygwin|mingw/ =~ RUBY_PLATFORM
    have_library("narray") || raise("ERROR: narray library is not found")
 end
 
+$CFLAGS << ' -O3'
 create_makefile( 'convolver/convolver' )
-
-

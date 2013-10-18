@@ -2,6 +2,7 @@
 
 #include <ruby.h>
 #include "narray.h"
+#include <stdio.h>
 
 // This is copied from na_array.c, with safety checks and temp vars removed
 inline int na_quick_idxs_to_pos( int rank, int *shape, int *idxs ) {
@@ -29,11 +30,12 @@ inline int size_from_shape( int rank, int *shape ) {
   return size;
 }
 
-// Returns number of leading 0s in the indices for a given pos
+// Got help on Stack Overflow for this:
+// http://stackoverflow.com/questions/19436055/efficient-way-to-detect-rank-of-corner-in-flattened-multi-dimensional-array
 inline int corner_rank( int max_ranks, int *shape, int pos ) {
   int i = 0;
-  while ( i < max_ranks - 1 ) {
-    if ( pos % shape[i] ) break;
+  while (i < max_ranks-1) { // TODO: Conditional should not be necessary
+    if (pos % shape[i]) return i;
     pos /= shape[i];
     i++;
   }
@@ -114,7 +116,7 @@ void convole_method_01(
 //  Convolve method 2. Pre-caclulate offsets for "outer" image when convolutions step up a rank,
 //                     and detect degree of rank changes.
 //
-//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 83.08 seconds. Score: 450- 460.
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 71.3 seconds. Score: 390- 400.
 //
 
 void convole_method_02(
@@ -152,7 +154,7 @@ void convole_method_02(
 //
 //  Convolve method 3. Memoized version of method_02
 //
-//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 19.84 seconds. Score: 107-111
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 19.48 seconds. Score: 110-115
 //
 
 void convole_method_03(
@@ -177,8 +179,7 @@ void convole_method_03(
   }
 
   offset = 0;
-  for ( i = 0; i < out_size;
-       i++, offset += out_co_incr[ corner_rank( out_rank, out_shape, i ) ] ) {
+  for ( i = 0; i < out_size; i++, offset += out_co_incr[ corner_rank( out_rank, out_shape, i ) ] ) {
 
     register float t = 0.0;
 
