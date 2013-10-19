@@ -15,4 +15,3 @@ Benchmark.bm do |x|
   source = Convolver2DBenchmark.new
   x.report('kilo') { 1000.times { Convolver.convolve( source.image, source.kernel ) } }
 end
-
