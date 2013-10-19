@@ -198,7 +198,7 @@ void convolve_method_03(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Convolve method 4. Attempts to use SIMD.
+//  Convolve method 4. Like method 3, but using SIMD.
 //
 //    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 11.95 seconds. Score: 65
 //
@@ -213,6 +213,7 @@ void convolve_method_04(
 
   in_size = size_from_shape( in_rank, in_shape );
   kernel_size = size_from_shape( kernel_rank, kernel_shape );
+  kernel_aligned = 4 * (kernel_size/4);
   out_size = size_from_shape( out_rank, out_shape );
 
   calc_co_increment( in_rank, in_shape, out_shape, out_co_incr );
@@ -224,7 +225,6 @@ void convolve_method_04(
     kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ corner_rank( kernel_shape, i ) ];
   }
 
-  kernel_aligned = 4 * (kernel_size/4);
   offset = -1;
   for ( i = 0; i < out_size; i++ ) {
     __m128 simd_x, simd_y, simd_t;
@@ -233,6 +233,7 @@ void convolve_method_04(
 
     offset += out_co_incr[ corner_rank( out_shape, i ) ];
 
+    // Use SIMD for all the aligned values in groups of 4
     for ( j = 0; j < kernel_aligned; j +=4 ) {
       simd_x = _mm_load_ps( kernel_ptr + j );
       // Yes the backwards alignment is correct
@@ -242,6 +243,7 @@ void convolve_method_04(
       simd_t = _mm_add_ps( simd_x, simd_t );
     }
 
+    // Complete any remaining 1,2 or 3 items
     for ( j = kernel_aligned; j < kernel_size; j++ ) {
       t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[ j ];
     }
