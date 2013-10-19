@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <xmmintrin.h>
 
+#define LARGEST_RANK 16
+
 // This is copied from na_array.c, with safety checks and temp vars removed
 inline int na_quick_idxs_to_pos( int rank, int *shape, int *idxs ) {
   int i, pos = 0;
@@ -110,7 +112,7 @@ void convolve_method_01(
     int kernel_rank, int *kernel_shape, float *kernel_ptr,
     int out_rank, int *out_shape, float *out_ptr ) {
   int i, j, k, in_size, kernel_size, out_size, offset;
-  int in_idx[16], kernel_idx[16], out_idx[16];
+  int in_idx[LARGEST_RANK], kernel_idx[LARGEST_RANK], out_idx[LARGEST_RANK];
 
   in_size = size_from_shape( in_rank, in_shape );
   kernel_size = size_from_shape( kernel_rank, kernel_shape );
@@ -144,7 +146,7 @@ void convolve_method_02(
     int kernel_rank, int *kernel_shape, float *kernel_ptr,
     int out_rank, int *out_shape, float *out_ptr ) {
   int i, j, in_size, kernel_size, out_size, i_offset, j_offset;
-  int out_co_incr[16], kernel_co_incr[16];
+  int out_co_incr[LARGEST_RANK], kernel_co_incr[LARGEST_RANK];
 
   in_size = size_from_shape( in_rank, in_shape );
   kernel_size = size_from_shape( kernel_rank, kernel_shape );
@@ -181,7 +183,7 @@ void convolve_method_03(
     int kernel_rank, int *kernel_shape, float *kernel_ptr,
     int out_rank, int *out_shape, float *out_ptr ) {
   int i, j, in_size, kernel_size, out_size, offset;
-  int out_co_incr[16], kernel_co_incr[16];
+  int out_co_incr[LARGEST_RANK], kernel_co_incr[LARGEST_RANK];
   int *kernel_co_incr_cache;
 
   in_size = size_from_shape( in_rank, in_shape );
@@ -216,9 +218,9 @@ void convolve_method_03(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Convolve method 4. Like method 3, but using SIMD.
+//  Convolve method 4. Like method 3, but using SIMD, and tracking indices of inner items.
 //
-//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 11.95 seconds. Score: 65
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 11.54 seconds. Score: 63
 //
 
 void convolve_method_04(
@@ -226,8 +228,8 @@ void convolve_method_04(
     int kernel_rank, int *kernel_shape, float *kernel_ptr,
     int out_rank, int *out_shape, float *out_ptr ) {
   int i, j, in_size, kernel_size, kernel_aligned, out_size, offset;
-  int out_co_incr[16], kernel_co_incr[16];
-  int ker_q[16], out_q[16];
+  int out_co_incr[LARGEST_RANK], kernel_co_incr[LARGEST_RANK];
+  int ker_q[LARGEST_RANK], out_q[LARGEST_RANK];
   int *kernel_co_incr_cache;
 
   in_size = size_from_shape( in_rank, in_shape );
@@ -246,9 +248,12 @@ void convolve_method_04(
     kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ corner_dec( kernel_rank, kernel_shape, ker_q  ) ];
   }
 
+  // For convenience of flow, we set offset to -1 and adjust counter 1 higher to compensate
   offset = -1;
   corner_reset( out_rank, out_shape, out_q );
   out_q[0]++;
+
+  // Main convolve loop
   for ( i = 0; i < out_size; i++ ) {
     __m128 simd_x, simd_y, simd_t;
     float t = 0.0;
@@ -279,7 +284,6 @@ void convolve_method_04(
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // To hold the module object
@@ -289,7 +293,7 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   struct NARRAY *na_a, *na_b, *na_c;
   volatile VALUE val_a, val_b, val_c;
   int target_rank, i;
-  int target_shape[16];
+  int target_shape[LARGEST_RANK];
 
   val_a = na_cast_object(a, NA_SFLOAT);
   GetNArray( val_a, na_a );
@@ -305,8 +309,8 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
     rb_raise( rb_eArgError, "narray a must have equal rank to narray b (temporary restriction)" );
   }
 
-  if ( na_a->rank > 16 ) {
-    rb_raise( rb_eArgError, "exceeded maximum narray rank for convolve of 16" );
+  if ( na_a->rank > LARGEST_RANK ) {
+    rb_raise( rb_eArgError, "exceeded maximum narray rank for convolve of %d", LARGEST_RANK );
   }
 
   target_rank = na_a->rank;
