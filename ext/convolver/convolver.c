@@ -36,7 +36,7 @@ inline int corner_rank( int *shape, int pos ) {
   int i = 1;
   if (pos % shape[0] || pos == 0) return 0;
   pos /= shape[0];
-  while (1) { // TODO: Conditional should not be necessary
+  while (1) {
     if (pos % shape[i]) return i;
     pos /= shape[i];
     i++;
