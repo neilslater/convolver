@@ -1,6 +1,8 @@
 # Convolver
 
-Adds an "inner" convolve operation to NArray floats. It is around 1000 times faster than equivalents
+[![Build Status](https://travis-ci.org/neilslater/convolver.png?branch=master)](http://travis-ci.org/neilslater/convolver)
+
+Adds an "inner" convolve operation to NArray floats. It is around 250 times faster than equivalents
 in pure Ruby.
 
 Note that convolves based on FFTW3 will be faster still for large arrays with large kernels,
