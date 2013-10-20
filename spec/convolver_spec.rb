@@ -83,7 +83,7 @@ describe Convolver do
   end
 
   describe "#nn_run_layer" do
-    it "should return an NArray" do
+    it "should calculate basic networks" do
       inputs = NArray[ 1.0 ]
       weights = NArray[ [ 1.0 ] ]
       thresholds = NArray[ 0.0 ]
