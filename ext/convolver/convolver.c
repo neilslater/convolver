@@ -65,7 +65,7 @@ inline void calc_co_increment( int rank, int *outer_shape, int *inner_shape, int
 //
 //  Convolve
 //
-//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 11.54 seconds. Score: 63
+//    Benchmark: 640x480 image, 8x8 kernel, 1000 iterations. 12.3 seconds.
 //
 
 void convolve_raw(
@@ -136,8 +136,7 @@ void convolve_raw(
 //
 //
 
-void nn_run_layer_raw(
-    int in_size, int out_size,
+void nn_run_layer_raw( int in_size, int out_size,
     float *in_ptr, float *weights, float *thresholds, float *out_ptr ) {
   int i, j, in_aligned_size, out_aligned_size, offset;
   __m128 simd_x, simd_y, simd_t;
@@ -155,6 +154,7 @@ void nn_run_layer_raw(
     // Use SIMD for all the aligned values in groups of 4
     for ( j = 0; j < in_aligned_size; j +=4 ) {
       simd_x = _mm_load_ps( in_ptr + j );
+      // Weights might not align to 16 bytes in all layers
       simd_y = _mm_loadu_ps( weights + (offset + j) );
       simd_x = _mm_mul_ps( simd_x, simd_y );
       simd_t = _mm_add_ps( simd_x, simd_t );
@@ -168,12 +168,14 @@ void nn_run_layer_raw(
     out_ptr[i] = simd_t[0] + simd_t[1] + simd_t[2] + simd_t[3] + t;
   }
 
+  /*
   // Apply thresholds, run ReLU transfer function
   for ( i = 0; i < out_aligned_size; i += 4 ) {
     simd_x = _mm_load_ps( out_ptr + i );
     simd_y = _mm_load_ps( thresholds + i );
     simd_x = _mm_sub_ps( simd_x, simd_y );
   }
+  */
 
   return;
 }
@@ -195,12 +197,8 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   val_b = na_cast_object(b, NA_SFLOAT);
   GetNArray( val_b, na_b );
 
-  if ( na_a->rank < na_b->rank ) {
-    rb_raise( rb_eArgError, "narray b must have equal or lower rank than narray a" );
-  }
-
-  if ( na_a->rank < na_b->rank ) {
-    rb_raise( rb_eArgError, "narray a must have equal rank to narray b (temporary restriction)" );
+  if ( na_a->rank != na_b->rank ) {
+    rb_raise( rb_eArgError, "narray a must have equal rank to narray b (a rack %d, b rank %d)", na_a->rank,  na_b->rank );
   }
 
   if ( na_a->rank > LARGEST_RANK ) {
@@ -227,7 +225,52 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   return val_c;
 }
 
+
+static VALUE narray_nn_run_single_layer( VALUE self, VALUE inputs, VALUE weights, VALUE thresholds ) {
+  struct NARRAY *na_inputs, *na_weights, *na_thresholds, *na_outputs;
+  volatile VALUE val_inputs, val_weights, val_thresholds, val_outputs;
+  int input_size, output_size;
+  int output_shape[1];
+
+  val_inputs = na_cast_object(inputs, NA_SFLOAT);
+  GetNArray( val_inputs, na_inputs );
+  if ( na_inputs->rank != 1 ) {
+    rb_raise( rb_eArgError, "input must be array of rank 1" );
+  }
+  input_size = na_inputs->total;
+
+  val_weights = na_cast_object(weights, NA_SFLOAT);
+  GetNArray( val_weights, na_weights );
+  if ( na_weights->rank != 2 ) {
+    rb_raise( rb_eArgError, "weights must be array of rank 2" );
+  }
+  if ( na_weights->shape[0] != input_size ) {
+    rb_raise( rb_eArgError, "weights shape mismatch, expected %d across, got %d", input_size, na_weights->shape[0] );
+  }
+  output_size = na_weights->shape[1];
+
+  val_thresholds = na_cast_object(thresholds, NA_SFLOAT);
+  GetNArray( val_thresholds, na_thresholds );
+  if ( na_thresholds->rank != 1 ) {
+    rb_raise( rb_eArgError, "thresholds must be array of rank 1" );
+  }
+  if ( na_thresholds->shape[0] != output_size ) {
+    rb_raise( rb_eArgError, "thresholds expected size %d, but got %d", output_size, na_thresholds->shape[0] );
+  }
+
+  output_shape[0] = output_size;
+  val_outputs = na_make_object( NA_SFLOAT, 1, output_shape, CLASS_OF( val_inputs ) );
+  GetNArray( val_outputs, na_outputs );
+
+  nn_run_layer_raw( input_size, output_size, (float*) na_inputs->ptr, (float*) na_weights->ptr,
+      (float*) na_thresholds->ptr, (float*) na_outputs->ptr );
+
+  return val_outputs;
+}
+
+
 void Init_convolver() {
   Convolver = rb_define_module( "Convolver" );
   rb_define_singleton_method( Convolver, "convolve", narray_convolve, 2 );
+  rb_define_singleton_method( Convolver, "nn_run_layer", narray_nn_run_single_layer, 3 );
 }

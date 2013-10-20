@@ -81,4 +81,20 @@ describe Convolver do
       ]
     end
   end
+
+  describe "#nn_run_layer" do
+    it "should return an NArray" do
+      inputs = NArray[ 1.0 ]
+      weights = NArray[ [ 1.0 ] ]
+      thresholds = NArray[ 0.0 ]
+      outputs = Convolver.nn_run_layer( inputs, weights, thresholds );
+      outputs.should be_narray_like NArray[ 1.0 ]
+
+      inputs = NArray[ 0.5, -0.5 ]
+      weights = NArray[ [ 1.0, 2.0 ], [ 2.0, 1.0 ] ]
+      thresholds = NArray[ 0.0, 0.0 ]
+      outputs = Convolver.nn_run_layer( inputs, weights, thresholds );
+      outputs.should be_narray_like NArray[ -0.5, 0.5 ]
+    end
+  end
 end
