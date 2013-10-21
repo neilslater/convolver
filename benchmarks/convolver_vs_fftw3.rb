@@ -3,7 +3,7 @@ require 'narray'
 require 'fftw3'
 require 'benchmark'
 
-# In Ruby for now, which is slower, but at least gets us ballpark figures
+# In Ruby for now, which is slower, but at least gets us ballpark figures (99% of the work is in the C)
 module FFTW3Convolver
   def self.convolve orig_a, orig_b
     combined_size = orig_a.size + orig_b.size - 1
@@ -29,8 +29,37 @@ class Convolver2DBenchmark
   attr_reader :image, :kernel
 
   def initialize
-    @image = NArray.float(256 * 256).random
-    @kernel = NArray.float(4 * 256).random
+    # These show Convolver.convolve as 3x faster than FFTW3
+    #  @image = NArray.float(256 * 256).random
+    #  @kernel = NArray.float(16 * 16).random
+
+    # These are roughly even (10% advantage to FFTW3)
+    #  @image = NArray.float(256 * 256).random
+    #  @kernel = NArray.float(32 * 32).random
+
+    # These show FFTW3 as 4x faster than Convolver.convolve
+    #  @image = NArray.float(256 * 256).random
+    #  @kernel = NArray.float(64 * 64).random
+
+    # These show Convolver.convolve as 200x faster than FFTW3
+    # @image = NArray.float(50 * 64 * 64).random
+    # @kernel = NArray.float(50 * 64 * 64).random
+
+    # These show FFTW3 as 2x faster than Convolver.convolve
+    # @image = NArray.float(128 * 128).random
+    # @kernel = NArray.float(64 * 64).random
+
+    # These show FFTW3 and Convolver.convolve roughly equal
+    # @image = NArray.float(80 * 80).random
+    # @kernel = NArray.float(64 * 64).random
+
+    # These show FFTW3 as 2x faster than Convolver.convolve
+    # @image = NArray.float(2 * 80 * 80).random
+    # @kernel = NArray.float(2 * 64 * 64).random
+
+    # These are roughly even - increasing size of image favours FFTW3
+    @image = NArray.float(2000 + 80 * 80).random
+    @kernel = NArray.float(80 * 80).random
   end
 end
 
