@@ -181,6 +181,14 @@ void nn_run_layer_raw( int in_size, int out_size,
 // To hold the module object
 VALUE Convolver = Qnil;
 
+/* @overload convolve( signal, kernel )
+ * Calculates float convolution of an array with a kernel. The inputs must have the same rank. The
+ * output has same rank as input, and size in each dimension d is given by
+ *  signal.shape[d] - kernel.shape[d] + 1
+ * @param [NArray] signal must be same size or larger than kernel in each dimension
+ * @param [NArray] kernel must be same size or smaller than signal in each dimension
+ * @return [NArray] result of convolving signal with kernel
+ */
 static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   struct NARRAY *na_a, *na_b, *na_c;
   volatile VALUE val_a, val_b, val_c;
@@ -221,7 +229,17 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   return val_c;
 }
 
-
+/* @overload nn_run_layer( inputs, weights, thresholds )
+ * Calculates activations of a fully-connected neural network layer. The transfer function after
+ * summing weights and applying threshold is a "ReLU", equivalent to
+ *  y = x < 0.0 ? 0.0 : x
+ * this is less sophisticated than many neural net architectures, but is fast to calculate and to
+ * train.
+ * @param [NArray] inputs must be rank 1 array of floats
+ * @param [NArray] weights must be rank 2 array of floats, with first rank size of inputs, and second rank equal to number of outputs desired
+ * @param [NArray] thresholds must be rank 1 array of floats, size equal to number of outputs desired
+ * @return [NArray] neuron activations
+ */
 static VALUE narray_nn_run_single_layer( VALUE self, VALUE inputs, VALUE weights, VALUE thresholds ) {
   struct NARRAY *na_inputs, *na_weights, *na_thresholds, *na_outputs;
   volatile VALUE val_inputs, val_weights, val_thresholds, val_outputs;
