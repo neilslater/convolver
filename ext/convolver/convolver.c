@@ -182,8 +182,8 @@ void nn_run_layer_raw( int in_size, int out_size,
 VALUE Convolver = Qnil;
 
 /* @overload convolve( signal, kernel )
- * Calculates float convolution of an array with a kernel. The inputs must have the same rank. The
- * output has same rank as input, and size in each dimension d is given by
+ * Calculates convolution of an array of floats representing a signal, with a second array representing
+ * a kernel. The two parameters must have the same rank. The output has same rank, its size in each dimension d is given by
  *  signal.shape[d] - kernel.shape[d] + 1
  * @param [NArray] signal must be same size or larger than kernel in each dimension
  * @param [NArray] kernel must be same size or smaller than signal in each dimension
