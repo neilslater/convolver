@@ -132,7 +132,7 @@ void convolve_raw(
 //
 //  Neural net
 //
-//    Benchmark: 1024 inputs, 256 outputs. 1000 iterations.
+//    Benchmark: 1024 inputs, 256 outputs. 1000 iterations. 0.56 seconds
 //
 //
 
@@ -154,7 +154,7 @@ void nn_run_layer_raw( int in_size, int out_size,
     // Use SIMD for all the aligned values in groups of 4
     for ( j = 0; j < in_aligned_size; j +=4 ) {
       simd_x = _mm_load_ps( in_ptr + j );
-      // Weights might not align to 16 bytes in all layers
+      // Weights might not align to 16 bytes due to size of layers
       simd_y = _mm_loadu_ps( weights + (offset + j) );
       simd_x = _mm_mul_ps( simd_x, simd_y );
       simd_t = _mm_add_ps( simd_x, simd_t );
@@ -168,14 +168,10 @@ void nn_run_layer_raw( int in_size, int out_size,
     out_ptr[i] = simd_t[0] + simd_t[1] + simd_t[2] + simd_t[3] + t;
   }
 
-  /*
-  // Apply thresholds, run ReLU transfer function
-  for ( i = 0; i < out_aligned_size; i += 4 ) {
-    simd_x = _mm_load_ps( out_ptr + i );
-    simd_y = _mm_load_ps( thresholds + i );
-    simd_x = _mm_sub_ps( simd_x, simd_y );
+  for ( i = 0; i < out_size; i++ ) {
+    out_ptr[i] -= thresholds[i];
+    if ( out_ptr[i] < 0.0 ) { out_ptr[i] = 0.0; }
   }
-  */
 
   return;
 }
