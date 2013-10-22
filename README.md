@@ -7,7 +7,7 @@ in pure Ruby.
 
 Note that convolves based on FFTW3 could well be faster still for large arrays with large kernels.
 Benchmark tests suggest that the kernel needs to be a few hundred items, and be significantly smaller
-than the signal before FFTW3 offers a significant advantage.
+than the signal before FFTW3 offers an advantage.
 
 ## Planned features
 
