@@ -66,8 +66,8 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
  * Calculates activations of a fully-connected neural network layer. The transfer function after
  * summing weights and applying threshold is a "ReLU", equivalent to
  *  y = x < 0.0 ? 0.0 : x
- * this is less sophisticated than many neural net architectures, but is fast to calculate and to
- * train.
+ * this is less sophisticated than many other neural net functions (such as sigma), but is fast to
+ * calculate and to train.
  * @param [NArray] inputs must be rank 1 array of floats
  * @param [NArray] weights must be rank 2 array of floats, with first dimension size of inputs, and second dimension size equal to number of outputs
  * @param [NArray] thresholds must be rank 1 array of floats, size equal to number of outputs desired
@@ -99,7 +99,7 @@ static VALUE narray_nn_run_single_layer( VALUE self, VALUE inputs, VALUE weights
   val_thresholds = na_cast_object(thresholds, NA_SFLOAT);
   GetNArray( val_thresholds, na_thresholds );
   if ( na_thresholds->rank != 1 ) {
-    rb_raise( rb_eArgError, "thresholds must be array of rank 1" );
+    rb_raise( rb_eArgError, "thresholds must be narray of rank 1" );
   }
   if ( na_thresholds->shape[0] != output_size ) {
     rb_raise( rb_eArgError, "thresholds expected size %d, but got %d", output_size, na_thresholds->shape[0] );
