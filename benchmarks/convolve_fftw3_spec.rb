@@ -15,6 +15,7 @@ module Convolver
     left_select_b = ( orig_b.size + 1 )/2
 
     right_select_b = orig_b.size - left_select_b
+    b_rev = orig_b.reverse
     mod_b[0] = orig_b[(0...left_select_b)].reverse
     mod_b[-right_select_b] = orig_b[-right_select_b..-1].reverse
 
@@ -61,7 +62,7 @@ RSpec::Matchers.define :be_narray_like do |expected_narray|
 
   failure_message_for_should_not do
     "NArray is too close to unwanted example.
-    Unwanted: #{@given.inspect}"
+    Got: #{@given.inspect}"
   end
 
   description do |given, expected|
@@ -79,7 +80,7 @@ describe Convolver do
       c.should be_narray_like NArray[ 0.19, 0.27 ]
     end
 
-    it "should convolve 1d arrays with a variety of odd or even lengths" do
+    it "should convolve 1d arrays with a variety of signal and kernel lengths" do
       a = NArray[ 0.3 ]
       b = NArray[ -0.7 ]
       c = Convolver.convolve_fftw3( a, b )
