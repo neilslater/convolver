@@ -1,5 +1,31 @@
 require 'fftw3'
 
+# This is a Ruby prototype for convolving larger kernels using fftw3.
+module Convolver
+  def self.convolve_fftw3 orig_a, orig_b
+    combined_size = orig_a.size + orig_b.size - 1
+    left_pad_a = ( combined_size - orig_a.size + 1)/2
+    output_offset = ( combined_size - orig_a.size )/2
+    mod_a = NArray.float(combined_size)
+    mod_a[left_pad_a] = orig_a
+
+    mod_b = NArray.float(combined_size)
+    left_select_b = ( orig_b.size + 1 )/2
+    right_select_b = orig_b.size - left_select_b
+    mod_b[0] = orig_b[(0...left_select_b)].reverse
+    mod_b[-right_select_b] = orig_b[-right_select_b..-1].reverse
+
+    afft = FFTW3.fft(mod_a)
+    bfft = FFTW3.fft(mod_b)
+    cfft = afft * bfft
+
+    puts "#{left_select_b}..#{(left_select_b + orig_a.size - orig_b.size)}"
+    (FFTW3.ifft( cfft )/combined_size).real[output_offset..(output_offset + orig_a.size - orig_b.size)]
+  end
+end
+
+
+
 # Matcher compares NArrays numerically
 RSpec::Matchers.define :be_narray_like do |expected_narray|
   match do |given|
@@ -37,28 +63,6 @@ RSpec::Matchers.define :be_narray_like do |expected_narray|
 
   description do |given, expected|
     "numerically very close to example"
-  end
-end
-
-module Convolver
-  def self.convolve_fftw3 orig_a, orig_b
-    combined_size = orig_a.size + orig_b.size - 1
-    left_pad_a = ( combined_size - orig_a.size + 1)/2
-    mod_a = NArray.float(combined_size)
-    mod_a[left_pad_a] = orig_a
-
-    mod_b = NArray.float(combined_size)
-    left_select_b = ( orig_b.size + 1 )/2
-    right_select_b = orig_b.size - left_select_b
-    mod_b[0] = orig_b[(0...left_select_b)].reverse
-    mod_b[-right_select_b] = orig_b[-right_select_b..-1].reverse
-
-    afft = FFTW3.fft(mod_a)
-    bfft = FFTW3.fft(mod_b)
-    cfft = afft * bfft
-
-    puts "#{left_select_b}..#{(left_select_b + orig_a.size - orig_b.size)}"
-    (FFTW3.ifft( cfft )/combined_size).real[left_select_b..(left_select_b + orig_a.size - orig_b.size)]
   end
 end
 
