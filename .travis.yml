@@ -1,6 +1,6 @@
 before_install:
  - sudo apt-get update -qq
- - sudo apt-get install -qq fftw3
+ - sudo apt-get install -qq libfftw3-dev
 language: ruby
 rvm:
   - "1.8.7"
