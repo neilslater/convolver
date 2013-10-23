@@ -4,13 +4,16 @@ require 'fftw3'
 module Convolver
   def self.convolve_fftw3 orig_a, orig_b
     combined_size = orig_a.size + orig_b.size - 1
+    output_size = orig_a.size - orig_b.size + 1
+    output_offset = orig_b.size - 1
+
     left_pad_a = ( combined_size - orig_a.size + 1)/2
-    output_offset = ( combined_size - orig_a.size )/2
     mod_a = NArray.float(combined_size)
     mod_a[left_pad_a] = orig_a
 
     mod_b = NArray.float(combined_size)
     left_select_b = ( orig_b.size + 1 )/2
+
     right_select_b = orig_b.size - left_select_b
     mod_b[0] = orig_b[(0...left_select_b)].reverse
     mod_b[-right_select_b] = orig_b[-right_select_b..-1].reverse
@@ -19,8 +22,8 @@ module Convolver
     bfft = FFTW3.fft(mod_b)
     cfft = afft * bfft
 
-    puts "#{left_select_b}..#{(left_select_b + orig_a.size - orig_b.size)}"
-    (FFTW3.ifft( cfft )/combined_size).real[output_offset..(output_offset + orig_a.size - orig_b.size)]
+    # puts " #{output_offset}..#{output_offset + output_size - 1}"
+    (FFTW3.ifft( cfft )/combined_size).real[output_offset...(output_offset + output_size)]
   end
 end
 
@@ -77,6 +80,11 @@ describe Convolver do
     end
 
     it "should convolve 1d arrays with a variety of odd or even lengths" do
+      a = NArray[ 0.3 ]
+      b = NArray[ -0.7 ]
+      c = Convolver.convolve_fftw3( a, b )
+      c.should be_narray_like NArray[ -0.21 ]
+
       a = NArray[ 0.3, 0.4, 0.5, 0.2 ]
       b = NArray[ -0.7 ]
       c = Convolver.convolve_fftw3( a, b )

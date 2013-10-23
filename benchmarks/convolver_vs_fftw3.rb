@@ -7,6 +7,9 @@ require 'benchmark'
 module FFTW3Convolver
   def self.convolve orig_a, orig_b
     combined_size = orig_a.size + orig_b.size - 1
+    output_size = orig_a.size - orig_b.size + 1
+    output_offset = ( orig_b.size )/2
+
     left_pad_a = ( combined_size - orig_a.size + 1)/2
     mod_a = NArray.float(combined_size)
     mod_a[left_pad_a] = orig_a
@@ -21,7 +24,7 @@ module FFTW3Convolver
     bfft = FFTW3.fft(mod_b)
     cfft = afft * bfft
 
-    (FFTW3.ifft( cfft )/combined_size).real[left_pad_a...(left_pad_a+ orig_a.size - orig_b.size + 1)]
+    (FFTW3.ifft( cfft )/combined_size).real[output_offset...(left_pad_a+ orig_a.size - orig_b.size + 1)]
   end
 end
 
