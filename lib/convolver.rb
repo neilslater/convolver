@@ -25,7 +25,7 @@ module Convolver
     bfft = FFTW3.fft(mod_b)
     cfft = afft * bfft
 
-    (FFTW3.ifft( cfft ).real/mod_a.size)[*ranges]
+    (FFTW3.ifft( cfft ).real * (1.0/mod_a.size))[*ranges]
   end
 
   private
