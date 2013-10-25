@@ -21,11 +21,11 @@ module Convolver
 
     Convolver.fit_kernel_backwards( mod_b, kernel )
 
-    afft = FFTW3.fft(mod_a)
-    bfft = FFTW3.fft(mod_b)
-    cfft = afft * bfft
+    afreqs = FFTW3.fft(mod_a)
+    bfreqs = FFTW3.fft(mod_b)
+    cfreqs = afreqs * bfreqs
 
-    (FFTW3.ifft( cfft ).real * (1.0/mod_a.size))[*ranges]
+    (FFTW3.ifft( cfreqs ).real * (1.0/mod_a.size))[*ranges]
   end
 
   private
