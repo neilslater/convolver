@@ -12,7 +12,7 @@ RSpec::Matchers.define :be_narray_like do |expected_narray|
     else
       d = given - expected_narray
       difference =  ( d * d ).sum / d.size
-      if difference > 1e-10
+      if difference > 1e-9
         @error = "Numerical difference with mean square error #{difference}"
       end
     end
