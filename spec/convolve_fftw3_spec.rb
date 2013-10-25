@@ -51,8 +51,8 @@ describe Convolver do
       it "should produce same results for 1D arrays " do
         (1..30).each do |signal_length|
           (1..signal_length).each do |kernel_length|
-            signal = NArray.float(signal_length).random()
-            kernel = NArray.float(kernel_length).random()
+            signal = NArray.sfloat(signal_length).random()
+            kernel = NArray.sfloat(kernel_length).random()
             expect_result = Convolver.convolve( signal, kernel )
             got_result = Convolver.convolve_fftw3( signal, kernel )
             got_result.should be_narray_like expect_result
@@ -60,5 +60,13 @@ describe Convolver do
         end
       end
     end
+
+    it "should calculate a 2D convolution" do
+      a = NArray[ [ 0.3, 0.4, 0.5 ], [ 0.6, 0.8, 0.2 ], [ 0.9, 1.0, 0.1 ] ]
+      b = NArray[ [ 1.2, -0.5 ], [ 0.5, -1.3 ] ]
+      c = Convolver.convolve_fftw3( a, b )
+      c.should be_narray_like NArray[ [ -0.58, 0.37 ], [ -0.53, 1.23 ] ]
+    end
+
   end
 end

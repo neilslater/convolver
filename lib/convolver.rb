@@ -4,7 +4,7 @@ require "convolver/version"
 require 'fftw3'
 
 module Convolver
-  # Uses FFTW3 library to calculates convolution of an array of floats representing a signal,
+  # Uses FFTW3 library to calculate convolution of an array of floats representing a signal,
   # with a second array representing a kernel. The two parameters must have the same rank.
   # The output has same rank, its size in each dimension d is given by
   #  signal.shape[d] - kernel.shape[d] + 1
@@ -12,34 +12,39 @@ module Convolver
   # @param [NArray] kernel must be same size or smaller than signal in each dimension
   # @return [NArray] result of convolving signal with kernel
   def self.convolve_fftw3 signal, kernel
-    combined_size = signal.size + kernel.size - 1
-    output_size = signal.size - kernel.size + 1
-    output_offset = kernel.size - 1
+    combined_shape, output_shape, output_offset, shift_by, ranges = fft_offsets( signal.shape, kernel.shape )
 
-    mod_a = NArray.float(combined_size)
-    left_pad_signal = ( combined_size - signal.size + 1 )/2
-    mod_a[left_pad_signal] = signal
+    mod_a = NArray.sfloat(*combined_shape)
+    mod_a[*shift_by] = signal
 
-    mod_b = NArray.float(combined_size)
-    left_shift_kernel = kernel.size / 2
-    b_rev = kernel.reverse
-    mod_b[0] = b_rev[(left_shift_kernel...kernel.size)]
-    mod_b[-left_shift_kernel] = b_rev[0...left_shift_kernel] if left_shift_kernel > 0
+    mod_b = NArray.sfloat(*combined_shape)
+
+    Convolver.fit_kernel_backwards( mod_b, kernel )
 
     afft = FFTW3.fft(mod_a)
     bfft = FFTW3.fft(mod_b)
     cfft = afft * bfft
 
-    (FFTW3.ifft( cfft )/combined_size).real[output_offset...(output_offset + output_size)]
+    (FFTW3.ifft( cfft )/mod_a.size).real[*ranges]
   end
 
   private
 
-  def self.fft_offsets signal_size, kernel_size
-    combined_size = signal_size + kernel_size - 1
-    output_size = signal_size - kernel_size + 1
-    output_offset = kernel_size - 1
-    left_pad_signal = ( combined_size - signal_size + 1 )/2
-    left_shift_kernel = kernel.size / 2
+  def self.fft_offsets signal_shape, kernel_shape
+    combined_shape = []
+    output_shape = []
+    output_offset = []
+    shift_by = []
+    ranges = []
+    signal_shape.each_with_index do |signal_size, i|
+      kernel_size = kernel_shape[i]
+
+      combined_shape[i] = signal_size + kernel_size - 1
+      output_shape[i] = signal_size - kernel_size + 1
+      output_offset[i] = kernel_size - 1
+      shift_by[i] = kernel_size / 2
+      ranges[i] = (output_offset[i]...(output_offset[i] + output_shape[i]))
+    end
+    [ combined_shape, output_shape, output_offset, shift_by, ranges ]
   end
 end

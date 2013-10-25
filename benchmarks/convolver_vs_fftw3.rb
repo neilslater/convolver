@@ -6,36 +6,36 @@ class Convolver2DBenchmark
 
   def initialize
     # These show Convolver.convolve as 3x faster than FFTW3
-    #  @image = NArray.float(256 * 256).random
-    #  @kernel = NArray.float(16 * 16).random
+    @image = NArray.sfloat(256 * 256).random
+    @kernel = NArray.sfloat(16 * 16).random
 
     # These are roughly even (10% advantage to FFTW3)
-    #  @image = NArray.float(256 * 256).random
-    #  @kernel = NArray.float(32 * 32).random
+    #  @image = NArray.sfloat(256 * 256).random
+    #  @kernel = NArray.sfloat(32 * 32).random
 
     # These show FFTW3 as 4x faster than Convolver.convolve
-    #  @image = NArray.float(256 * 256).random
-    #  @kernel = NArray.float(64 * 64).random
+    #  @image = NArray.sfloat(256 * 256).random
+    #  @kernel = NArray.sfloat(64 * 64).random
 
     # These show Convolver.convolve as 200x faster than FFTW3
-    # @image = NArray.float(50 * 64 * 64).random
-    # @kernel = NArray.float(50 * 64 * 64).random
+    # @image = NArray.sfloat(50 * 64 * 64).random
+    # @kernel = NArray.sfloat(50 * 64 * 64).random
 
     # These show FFTW3 as 2x faster than Convolver.convolve
-    # @image = NArray.float(128 * 128).random
-    # @kernel = NArray.float(64 * 64).random
+    # @image = NArray.sfloat(128 * 128).random
+    # @kernel = NArray.sfloat(64 * 64).random
 
     # These show FFTW3 and Convolver.convolve roughly equal
-    # @image = NArray.float(80 * 80).random
-    # @kernel = NArray.float(64 * 64).random
+    # @image = NArray.sfloat(80 * 80).random
+    # @kernel = NArray.sfloat(64 * 64).random
 
     # These show FFTW3 as 2x faster than Convolver.convolve
-    # @image = NArray.float(2 * 80 * 80).random
-    # @kernel = NArray.float(2 * 64 * 64).random
+    # @image = NArray.sfloat(2 * 80 * 80).random
+    # @kernel = NArray.sfloat(2 * 64 * 64).random
 
     # These are roughly even - increasing size of image favours FFTW3
-    @image = NArray.float(2000 + 80 * 80).random
-    @kernel = NArray.float(80 * 80).random
+    #@image = NArray.sfloat(2000 + 80 * 80).random
+    #@kernel = NArray.sfloat(80 * 80).random
   end
 end
 

@@ -6,8 +6,8 @@ class Convolver2DBenchmark
   attr_reader :image, :kernel
 
   def initialize
-    @image = NArray.float(640, 480).random
-    @kernel = NArray.float(8, 8).random
+    @image = NArray.sfloat(640, 480).random
+    @kernel = NArray.sfloat(8, 8).random
   end
 end
 

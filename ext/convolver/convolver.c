@@ -14,6 +14,45 @@
 // To hold the module object
 VALUE Convolver = Qnil;
 
+static VALUE narray_fit_backwards( VALUE self, VALUE a, VALUE b ) {
+  struct NARRAY *na_a, *na_b;
+  volatile VALUE val_a, val_b;
+  int target_rank, i;
+  int shift_by[LARGEST_RANK];
+
+  val_a = na_cast_object(a, NA_SFLOAT);
+  GetNArray( val_a, na_a );
+
+  val_b = na_cast_object(b, NA_SFLOAT);
+  GetNArray( val_b, na_b );
+
+  if ( na_a->rank != na_b->rank ) {
+    rb_raise( rb_eArgError, "narray a must have equal rank to narray b (a rank %d, b rank %d)", na_a->rank,  na_b->rank );
+  }
+
+  if ( na_a->rank > LARGEST_RANK ) {
+    rb_raise( rb_eArgError, "exceeded maximum narray rank for convolve of %d", LARGEST_RANK );
+  }
+
+  target_rank = na_a->rank;
+
+  for ( i = 0; i < target_rank; i++ ) {
+    if ( ( na_a->shape[i] - na_b->shape[i] ) < 0 ) {
+      rb_raise( rb_eArgError, "no space for backward fit" );
+    }
+    shift_by[i] = na_b->shape[i] >> 1;
+  }
+
+  fit_backwards_raw(
+    target_rank,
+    na_a->shape, (float*) na_a->ptr,
+    na_b->shape, (float*) na_b->ptr,
+    shift_by );
+
+  return Qnil;
+}
+
+
 /* @overload convolve( signal, kernel )
  * Calculates convolution of an array of floats representing a signal, with a second array representing
  * a kernel. The two parameters must have the same rank. The output has same rank, its size in each dimension d is given by
@@ -120,4 +159,5 @@ void Init_convolver() {
   Convolver = rb_define_module( "Convolver" );
   rb_define_singleton_method( Convolver, "convolve", narray_convolve, 2 );
   rb_define_singleton_method( Convolver, "nn_run_layer", narray_nn_run_single_layer, 3 );
+  rb_define_singleton_method( Convolver, "fit_kernel_backwards", narray_fit_backwards, 2 );
 }
