@@ -12,7 +12,7 @@ module Convolver
   # @param [NArray] kernel must be same size or smaller than signal in each dimension
   # @return [NArray] result of convolving signal with kernel
   def self.convolve_fftw3 signal, kernel
-    combined_shape, output_shape, output_offset, shift_by, ranges = fft_offsets( signal.shape, kernel.shape )
+    combined_shape, shift_by, ranges = fft_offsets( signal.shape, kernel.shape )
 
     mod_a = NArray.sfloat(*combined_shape)
     mod_a[*shift_by] = signal
@@ -32,19 +32,17 @@ module Convolver
 
   def self.fft_offsets signal_shape, kernel_shape
     combined_shape = []
-    output_shape = []
-    output_offset = []
     shift_by = []
     ranges = []
     signal_shape.each_with_index do |signal_size, i|
       kernel_size = kernel_shape[i]
 
       combined_shape[i] = signal_size + kernel_size - 1
-      output_shape[i] = signal_size - kernel_size + 1
-      output_offset[i] = kernel_size - 1
+      output_size = signal_size - kernel_size + 1
+      output_offset = kernel_size - 1
       shift_by[i] = kernel_size / 2
-      ranges[i] = (output_offset[i]...(output_offset[i] + output_shape[i]))
+      ranges[i] = (output_offset...(output_offset + output_size))
     end
-    [ combined_shape, output_shape, output_offset, shift_by, ranges ]
+    [ combined_shape, shift_by, ranges ]
   end
 end
