@@ -14,6 +14,16 @@
 // To hold the module object
 VALUE Convolver = Qnil;
 
+/* @overload fit_kernel_backwards( fft_temp_space, kernel )
+ * @!visibility private
+ * Over-writes fft_temp_space at edges with a reversed copy of kernel, in such a way that
+ * an FFTW3-based convolve has a result set in an easy-to-extract position later. This is
+ * implemented as a native extension for convenience and speed - to do this with methods provided
+ * by narray gem would take several complex steps and be inefficient.
+ * @param [NArray<sfloat>] fft_temp_space target array for pre-fft copy of kernel, is over-written
+ * @param [NArray] kernel must be same size or smaller than fft_temp_space in each dimension
+ * @return [nil]
+ */
 static VALUE narray_fit_backwards( VALUE self, VALUE a, VALUE b ) {
   struct NARRAY *na_a, *na_b;
   volatile VALUE val_a, val_b;
