@@ -1,8 +1,10 @@
 # Convolver
 
+[![Gem Version](https://badge.fury.io/rb/convolver.png)](http://badge.fury.io/rb/convolver)
 [![Build Status](https://travis-ci.org/neilslater/convolver.png?branch=master)](http://travis-ci.org/neilslater/convolver)
+[![Dependency Status](https://gemnasium.com/neilslater/convolver.png)](https://gemnasium.com/neilslater/convolver)
 
-Calculates discrete convolution between two multi-dimensional arrays.
+Calculates discrete convolution between two multi-dimensional arrays of floats.
 See http://en.wikipedia.org/wiki/Convolution
 
 ## Planned features
@@ -41,7 +43,7 @@ Basic convolution:
     => NArray.float(2): [ 0.19, 0.27 ]
 
  * Convolver only works on single-precision floats internally. It will cast NArray types to this, if
-possible, prior to calculating.
+possible, prior to calculating. For best speed, use NArray.sfloat arrays.
 
  * The output is smaller than the input, each dimension is reduced by 1 less than the width of the
 kernel in the same dimension.
