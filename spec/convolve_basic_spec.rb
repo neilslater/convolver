@@ -1,19 +1,19 @@
 require 'helpers'
 
 describe Convolver do
-  describe "#convolve" do
+  describe "#convolve_basic" do
 
     it "should work like the example in the README" do
       a = NArray[ 0.3, 0.4, 0.5 ]
       b = NArray[ 1.3, -0.5 ]
-      c = Convolver.convolve( a, b )
+      c = Convolver.convolve_basic( a, b )
       c.should be_narray_like NArray[ 0.19, 0.27 ]
     end
 
     it "should calculate a 2D convolution" do
       a = NArray[ [ 0.3, 0.4, 0.5 ], [ 0.6, 0.8, 0.2 ], [ 0.9, 1.0, 0.1 ] ]
       b = NArray[ [ 1.2, -0.5 ], [ 0.5, -1.3 ] ]
-      c = Convolver.convolve( a, b )
+      c = Convolver.convolve_basic( a, b )
       c.should be_narray_like NArray[ [ -0.58, 0.37 ], [ -0.53, 1.23 ] ]
     end
 
@@ -22,7 +22,7 @@ describe Convolver do
         [ 0.9, 1.0, 0.1, 0.9, 1.0 ], [ 0.5, 0.9, 0.3, 0.2, 0.8 ], [ 0.7, 0.1, 0.3, 0.0, 0.1 ],
         [ 0.4, 0.5, 0.6, 0.7, 0.8 ], [ 0.5, 0.4, 0.3, 0.2, 0.1 ] ]
       b = NArray[ [ 1.2, -0.5, 0.2 ], [ 1.8, 0.5, -1.3 ] ]
-      c = Convolver.convolve( a, b )
+      c = Convolver.convolve_basic( a, b )
       c.should be_narray_like NArray[ [ 1.48, 0.79, 1.03 ], [ 2.35, 1.7, -0.79 ], [ 1.56, 2.84, -0.53 ],
         [ 1.13, 1.3, 0.83 ], [ 1.04, 0.26, 0.77 ], [ 1.06, 1.05, 1.04 ] ]
     end
@@ -43,7 +43,7 @@ describe Convolver do
       ]
 
       # Should be 3x2x1
-      c = Convolver.convolve( a, b )
+      c = Convolver.convolve_basic( a, b )
       c.should be_narray_like NArray[ [ [ 5.51, 3.04, 4.3 ], [ 3.04, 6.31, 3.87 ] ] ]
     end
 
@@ -74,33 +74,11 @@ describe Convolver do
         [ [ 0.8, 0.2 ], [ 0.5, 0.0 ], [ 1.4, 1.3 ] ] ] ]
 
       # Should be 2x2x3x2
-      c = Convolver.convolve( a, b )
+      c = Convolver.convolve_basic( a, b )
       c.should be_narray_like NArray[
         [ [ [ 8.5, 8.2 ], [ 11.34, 9.68 ] ], [ [ 7.68, 6.56 ], [ 11.24, 7.16 ] ], [ [ 9.14, 6.54 ], [ 12.44, 9.2 ] ] ],
         [ [ [ 8.5, 8.2 ], [ 11.34, 9.68 ] ], [ [ 7.68, 6.56 ], [ 11.24, 7.16 ] ], [ [ 9.14, 6.54 ], [ 12.44, 9.2 ] ] ]
       ]
-    end
-  end
-
-  describe "#nn_run_layer" do
-    it "should calculate basic layer rules" do
-      inputs = NArray[ 1.0 ]
-      weights = NArray[ [ 1.0 ] ]
-      thresholds = NArray[ 0.0 ]
-      outputs = Convolver.nn_run_layer( inputs, weights, thresholds );
-      outputs.should be_narray_like NArray[ 1.0 ]
-
-      inputs = NArray[ 0.5, -0.5 ]
-      weights = NArray[ [ 1.0, 2.0 ], [ 2.0, 1.0 ] ]
-      thresholds = NArray[ 0.0, 0.0 ]
-      outputs = Convolver.nn_run_layer( inputs, weights, thresholds );
-      outputs.should be_narray_like NArray[ 0.0, 0.5 ]
-
-      inputs = NArray[ 0.3, -0.4, 0.8, -0.7 ]
-      weights = NArray[ [ 1.0, 0.25, 0.5, -0.5 ], [ -1.0, -0.25, -0.5, 0.5 ] ]
-      thresholds = NArray[ 0.0, 0.0 ]
-      outputs = Convolver.nn_run_layer( inputs, weights, thresholds );
-      outputs.should be_narray_like NArray[ 0.95, 0.0 ]
     end
   end
 end

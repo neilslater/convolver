@@ -4,6 +4,36 @@ require "convolver/version"
 require 'fftw3'
 
 module Convolver
+  # Chooses and calls likely fastest method from #convolve_basic and #convolve_fftw3.
+  # The two parameters must have the same rank. The output has same rank, its size in each
+  # dimension d is given by
+  #  signal.shape[d] - kernel.shape[d] + 1
+  # If you always perform convolutions of the same size, you may be better off benchmarking your
+  # own code using either #convolve_basic or #convolve_fftw3, and have your code use the fastest.
+  # @param [NArray] signal must be same size or larger than kernel in each dimension
+  # @param [NArray] kernel must be same size or smaller than signal in each dimension
+  # @return [NArray] result of convolving signal with kernel
+  def self.convolve signal, kernel
+    # For small signals, just go straight to basic
+    if signal.size < 1000
+      return convolve_basic( signal, kernel )
+    end
+
+    # If predicted time is less than a millisecond, just do a basic convolve
+    basic_time_predicted = predict_convolve_basic_time( signal, kernel )
+    if basic_time_predicted < 0.1
+      return convolve_basic( signal, kernel )
+    end
+
+    # Factor of two to allow for large uncertainty in predictions for FFTW3
+    if predict_convolve_fft_time( signal, kernel ) < 2 * basic_time_predicted
+      return convolve_fftw3( signal, kernel )
+    end
+
+    convolve_basic( signal, kernel )
+  end
+
+
   # Uses FFTW3 library to calculate convolution of an array of floats representing a signal,
   # with a second array representing a kernel. The two parameters must have the same rank.
   # The output has same rank, its size in each dimension d is given by

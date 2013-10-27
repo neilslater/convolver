@@ -63,7 +63,7 @@ static VALUE narray_fit_backwards( VALUE self, VALUE a, VALUE b ) {
 }
 
 
-/* @overload convolve( signal, kernel )
+/* @overload convolve_basic( signal, kernel )
  * Calculates convolution of an array of floats representing a signal, with a second array representing
  * a kernel. The two parameters must have the same rank. The output has same rank, its size in each dimension d is given by
  *  signal.shape[d] - kernel.shape[d] + 1
@@ -167,7 +167,7 @@ static VALUE narray_nn_run_single_layer( VALUE self, VALUE inputs, VALUE weights
 
 void Init_convolver() {
   Convolver = rb_define_module( "Convolver" );
-  rb_define_singleton_method( Convolver, "convolve", narray_convolve, 2 );
+  rb_define_singleton_method( Convolver, "convolve_basic", narray_convolve, 2 );
   rb_define_singleton_method( Convolver, "nn_run_layer", narray_nn_run_single_layer, 3 );
   rb_define_singleton_method( Convolver, "fit_kernel_backwards", narray_fit_backwards, 2 );
 }

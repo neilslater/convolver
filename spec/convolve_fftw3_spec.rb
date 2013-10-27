@@ -114,7 +114,7 @@ describe Convolver do
           (1..signal_length).each do |kernel_length|
             signal = NArray.sfloat(signal_length).random()
             kernel = NArray.sfloat(kernel_length).random()
-            expect_result = Convolver.convolve( signal, kernel )
+            expect_result = Convolver.convolve_basic( signal, kernel )
             got_result = Convolver.convolve_fftw3( signal, kernel )
             got_result.should be_narray_like expect_result
           end
@@ -128,7 +128,7 @@ describe Convolver do
               (1..signal_y).each do |kernel_y|
                 signal = NArray.sfloat(signal_x,signal_y).random()
                 kernel = NArray.sfloat(kernel_x,kernel_y).random()
-                expect_result = Convolver.convolve( signal, kernel )
+                expect_result = Convolver.convolve_basic( signal, kernel )
                 got_result = Convolver.convolve_fftw3( signal, kernel )
                 got_result.should be_narray_like expect_result
               end
@@ -146,7 +146,7 @@ describe Convolver do
                   (1..signal_z).each do |kernel_z|
                     signal = NArray.sfloat(signal_x,signal_y,signal_z).random()
                     kernel = NArray.sfloat(kernel_x,kernel_y,kernel_z).random()
-                    expect_result = Convolver.convolve( signal, kernel )
+                    expect_result = Convolver.convolve_basic( signal, kernel )
                     got_result = Convolver.convolve_fftw3( signal, kernel )
                     got_result.should be_narray_like expect_result
                   end
