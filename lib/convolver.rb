@@ -14,8 +14,8 @@ module Convolver
   # @param [NArray] kernel must be same size or smaller than signal in each dimension
   # @return [NArray] result of convolving signal with kernel
   def self.convolve signal, kernel
-    # For small signals, just go straight to basic
-    if signal.size < 1000
+    # For small signals or kernels, just go straight to basic
+    if signal.size < 1000 || kernel.size < 100
       return convolve_basic( signal, kernel )
     end
 
@@ -32,7 +32,6 @@ module Convolver
 
     convolve_basic( signal, kernel )
   end
-
 
   # Uses FFTW3 library to calculate convolution of an array of floats representing a signal,
   # with a second array representing a kernel. The two parameters must have the same rank.

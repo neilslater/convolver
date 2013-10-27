@@ -2,18 +2,14 @@
 
 [![Build Status](https://travis-ci.org/neilslater/convolver.png?branch=master)](http://travis-ci.org/neilslater/convolver)
 
-Adds a convolve operation to NArray floats. It is around 250 times faster than equivalents
-in pure Ruby.
-
-The gem makes convolution via FFTW3 library available. This is faster for convolutions with
-larger kernels and signals. The relationship is complex, but as a rule of thumb, the kernel
-needs to be around 1000 entries or larger before it is worth switching to FFTW3-based convolves.
+Calculates discrete convolution between two multi-dimensional arrays.
+See http://en.wikipedia.org/wiki/Convolution
 
 ## Planned features
 
-The *convolver* gem will eventually contain a basic kit for creating, training and running convolutional
-neural networks. As a side effect of this plan, it will also contain efficient code for
-calculating signal convolutions for other types of analysis.
+The *convolver* gem will eventually contain a basic kit for creating, training and running
+convolutional neural networks. As a side effect of this plan, it currently contains code for
+calculating floating-point convolutions for other types of analysis.
 
 ## Installation
 
@@ -53,12 +49,10 @@ kernel in the same dimension.
  * Convolver expects input a and kernel b to have the same rank, and for the kernel to be same size
 or smaller in all dimensions as the input.
 
-FFTW3 convolution:
-
-    a = NArray[0.3,0.4,0.5]
-    b = NArray[1.3, -0.5]
-    c = Convolver.convolve_fftw3( a, b )
-    => NArray.float(2): [ 0.19, 0.27 ]
+ * Convolver.convolve will try to choose the faster of two approaches it has coded. In general,
+small convolutions are processed directly by multiplying out all combinations and summing them,
+and large convolutions are processed using FFTW3 to convert to frequency space where convolution
+is simpler and faster to calculate, then convert back.
 
 ## Contributing
 
