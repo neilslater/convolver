@@ -28,7 +28,50 @@ module Convolver
     (FFTW3.ifft( cfreqs ).real * (1.0/mod_a.size))[*ranges]
   end
 
+  # A rough estimate of time that #convolve_fftw3 will take, based on complexity
+  # of its operations, and some rough benchmarking. A value of 1.0 corresponds to results
+  # varying between 1 and 12 milliseconds on the test computer.
+  # @param [NArray] signal must be same size or larger than kernel in each dimension
+  # @param [NArray] kernel must be same size or smaller than signal in each dimension
+  # @return [Float] rough estimate of time for convolution compared to baseline
+  def self.predict_convolve_fft_time signal, kernel
+    16 * 4.55e-08 * combined_shape(signal.shape,kernel.shape).inject(1) { |t,x| t * x * Math.log(x) }
+  end
+
+  # A rough estimate of time that #convolve will take, based on complexity
+  # of its operations, and some rough benchmarking. A value of 1.0 corresponds to results
+  # varying bewteen 2 and 8 milliseconds on the test computer.
+  # @param [NArray] signal must be same size or larger than kernel in each dimension
+  # @param [NArray] kernel must be same size or smaller than signal in each dimension
+  # @return [Float] rough estimate of time for convolution compared to baseline
+  def self.predict_convolve_basic_time signal, kernel
+    outputs = shape_to_size( result_shape( signal.shape, kernel.shape ) )
+    4.54e-12 * (outputs * shape_to_size( signal.shape ) * shape_to_size( kernel.shape ))
+  end
+
   private
+
+  def self.shape_to_size shape
+    shape.inject(1) { |t,x| t * x }
+  end
+
+  def self.combined_shape signal_shape, kernel_shape
+    combined_shape = [  ]
+    signal_shape.each_with_index do |signal_size, i|
+      kernel_size = kernel_shape[i]
+      combined_shape[i] = signal_size + kernel_size - 1
+    end
+    combined_shape
+  end
+
+  def self.result_shape signal_shape, kernel_shape
+    result_shape = [  ]
+    signal_shape.each_with_index do |signal_size, i|
+      kernel_size = kernel_shape[i]
+      result_shape[i] = signal_size - kernel_size + 1
+    end
+    result_shape
+  end
 
   def self.fft_offsets signal_shape, kernel_shape
     combined_shape = []
