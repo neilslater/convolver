@@ -1,5 +1,6 @@
 # convolver/spec/helpers.rb
 require 'convolver'
+require 'mocha/api'
 
 # Matcher compares NArrays numerically
 RSpec::Matchers.define :be_narray_like do |expected_narray|
