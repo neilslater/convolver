@@ -50,3 +50,16 @@ void nn_run_layer_raw( int in_size, int out_size,
 
   return;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Max-pool multi-dimension array
+//
+//    Benchmark: 256x256 inputs, tile 2, pool 3. 1000 iterations.
+//
+//
+
+void max_pool_raw( int rank, int *input_shape, float *input_ptr,
+    int *output_shape, float *output_ptr, int tile_by, int pool_by ) {
+  return;
+}

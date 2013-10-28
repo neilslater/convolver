@@ -165,9 +165,61 @@ static VALUE narray_nn_run_single_layer( VALUE self, VALUE inputs, VALUE weights
 }
 
 
+/* @overload max_pool( array, tile_size, pool_size )
+ * Reduces an array in each dimension by a factor tile_size, by sampling pool_size entries
+ * and using the maximum value found.
+ * @param [NArray] array source data for pooling
+ * @param [Integer] tile_size reduce dimensions of input array by this factor, accepts 1 to 100
+ * @param [Integer] pool_size consider these many positions in each dimension (allows for overlap), accepts 1 to 100
+ * @return [NArray] result of applying max pooling to array
+ */
+static VALUE narray_max_pool( VALUE self, VALUE a, VALUE tile_size, VALUE pool_size ) {
+  struct NARRAY *na_a, *na_b;
+  volatile VALUE val_a, val_b;
+  int target_rank, i, tile, pool;
+  int target_shape[LARGEST_RANK];
+
+  tile = NUM2INT( tile_size );
+  if ( tile < 1 || tile > 100 ) {
+    rb_raise( rb_eArgError, "tile size out of bounds, expected in range 1..100, got %d", tile );
+  }
+
+  pool = NUM2INT( pool_size );
+  if ( pool < 1 || pool > 100 ) {
+    rb_raise( rb_eArgError, "pool size out of bounds, expected in range 1..100, got %d", pool );
+  }
+
+  val_a = na_cast_object(a, NA_SFLOAT);
+  GetNArray( val_a, na_a );
+
+  if ( na_a->rank > LARGEST_RANK ) {
+    rb_raise( rb_eArgError, "exceeded maximum narray rank for max_pool of %d", LARGEST_RANK );
+  }
+
+  target_rank = na_a->rank;
+
+  for ( i = 0; i < target_rank; i++ ) {
+    target_shape[i] = ( na_a->shape[i] + tile - 1 ) / tile;
+  }
+
+  val_b = na_make_object( NA_SFLOAT, target_rank, target_shape, CLASS_OF( val_a ) );
+  GetNArray( val_b, na_b );
+
+  max_pool_raw(
+    target_rank, na_a->shape, (float*) na_a->ptr,
+    target_shape, (float*) na_b->ptr,
+    tile, pool );
+
+  return val_b;
+}
+
+
 void Init_convolver() {
   Convolver = rb_define_module( "Convolver" );
   rb_define_singleton_method( Convolver, "convolve_basic", narray_convolve, 2 );
   rb_define_singleton_method( Convolver, "nn_run_layer", narray_nn_run_single_layer, 3 );
+  rb_define_singleton_method( Convolver, "max_pool", narray_max_pool, 3 );
+
+  // private method
   rb_define_singleton_method( Convolver, "fit_kernel_backwards", narray_fit_backwards, 2 );
 }
