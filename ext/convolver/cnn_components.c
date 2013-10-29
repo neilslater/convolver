@@ -4,7 +4,7 @@
 #include "cnn_components.h"
 
 // This is copied from na_array.c, with safety checks and temp vars removed
-inline int na_inline_idxs_to_pos( int rank, int *shape, int *idxs ) {
+inline int xna_inline_idxs_to_pos( int rank, int *shape, int *idxs ) {
   int i, pos = 0;
   for ( i = rank - 1; i >= 0; i-- ) {
     if ( idxs[i] >= shape[i] ) {
@@ -17,7 +17,7 @@ inline int na_inline_idxs_to_pos( int rank, int *shape, int *idxs ) {
 }
 
 // This is inverse of above
-inline void na_inline_pos_to_idxs( int rank, int *shape, int pos, int *idxs ) {
+inline void xna_inline_pos_to_idxs( int rank, int *shape, int pos, int *idxs ) {
   int i;
   for ( i = 0; i < rank; i++ ) {
     idxs[ i ] = pos % shape[i];
@@ -100,12 +100,12 @@ void max_pool_raw( int rank, int *input_shape, float *input_ptr,
   output_size = size_from_shape( rank, output_shape );
 
   for (i = 0; i < output_size; i++ ) {
-    na_inline_pos_to_idxs( rank, output_shape, i, output_idx );
+    xna_inline_pos_to_idxs( rank, output_shape, i, output_idx );
     max = -1e30;
     for (j = 0; j < pool_size; j++ ) {
-      na_inline_pos_to_idxs( rank, pool_shape, j, pool_idx );
+      xna_inline_pos_to_idxs( rank, pool_shape, j, pool_idx );
       for ( k = 0; k < rank; k++ ) { input_idx[k] = output_idx[k] * tile_by + pool_idx[k]; }
-      pos = na_inline_idxs_to_pos( rank, input_shape, input_idx );
+      pos = xna_inline_idxs_to_pos( rank, input_shape, input_idx );
       if ( pos >= 0 && input_ptr[pos] > max ) {
         max = input_ptr[pos];
       }
