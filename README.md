@@ -7,17 +7,12 @@
 Calculates discrete convolution between two multi-dimensional arrays of floats.
 See http://en.wikipedia.org/wiki/Convolution
 
-## Planned features
-
-The *convolver* gem will eventually contain a basic kit for creating, training and running
-convolutional neural networks. As a side effect of this plan, it currently contains code for
-calculating floating-point convolutions for other types of analysis.
-
 ## Installation
 
 ### Dependency: FFTW3
 
-Before you install *convolver*, you should install FFTW3. See http://www.fftw.org/ for details.
+Before you install *convolver*, you should install the FFTW3 library on your system.
+See http://www.fftw.org/ for details.
 
 ### Installing the gem
 
@@ -45,8 +40,8 @@ Basic convolution:
  * Convolver only works on single-precision floats internally. It will cast NArray types to this, if
 possible, prior to calculating. For best speed, use NArray.sfloat arrays.
 
- * The output is smaller than the input, each dimension is reduced by 1 less than the width of the
-kernel in the same dimension.
+ * The output is smaller than the input, it only contains fully-calculated values. The output size
+is the original size, minus the kernel size, plus 1, in each dimension.
 
  * Convolver expects input a and kernel b to have the same rank, and for the kernel to be same size
 or smaller in all dimensions as the input.
