@@ -54,7 +54,7 @@ is simpler and faster to calculate, then convert back.
 ## Convolutional Neural Nets
 
 Code for CNNs in Ruby, based on the convolve_basic method from this gem, is planned for a
-new gem.
+new gem ```co_ne_ne```.
 
 ## Contributing
 
