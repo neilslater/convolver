@@ -78,6 +78,7 @@ void convolve_raw(
   for ( i = 0; i < out_size; i++ ) {
     __m128 simd_x, simd_y, simd_t;
     float t = 0.0;
+    float v[4];
     simd_t = _mm_setzero_ps();
 
     offset += out_co_incr[ corner_dec( out_rank, out_shape, out_q ) ];
@@ -91,13 +92,14 @@ void convolve_raw(
       simd_x = _mm_mul_ps( simd_x, simd_y );
       simd_t = _mm_add_ps( simd_x, simd_t );
     }
+    _mm_store_ps( v, simd_t );
 
     // Complete any remaining 1,2 or 3 items one at a time
     for ( j = kernel_aligned; j < kernel_size; j++ ) {
       t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[ j ];
     }
 
-    out_ptr[i] = simd_t[0] + simd_t[1] + simd_t[2] + simd_t[3] + t;
+    out_ptr[i] = v[0] + v[1] + v[2] + v[3] + t;
   }
 
   xfree( kernel_co_incr_cache );
