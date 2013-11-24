@@ -8,3 +8,10 @@ rvm:
   - "2.0.0"
   - ree
   - rbx-2.1.1
+  - rbx-2.2.0
+  - rbx-2.2.1
+allow_failures:
+  rvm:
+    - ruby-head
+    - rbx-2.2.0
+    - rbx-2.2.1
