@@ -26,13 +26,13 @@ RSpec::Matchers.define :be_narray_like do |expected_narray|
     ! @error
   end
 
-  failure_message_for_should do
+  failure_message do
     "NArray does not match supplied example. #{@error}
     Expected: #{@expected.inspect}
     Got: #{@given.inspect}"
   end
 
-  failure_message_for_should_not do
+  failure_message_when_negated do
     "NArray is too close to unwanted example.
     Unwanted: #{@given.inspect}"
   end

@@ -7,7 +7,7 @@ describe Convolver do
       a = NArray[ 0.3, 0.4, 0.5 ]
       b = NArray[ 1.3, -0.5 ]
       c = Convolver.convolve( a, b )
-      c.should be_narray_like NArray[ 0.19, 0.27 ]
+      expect( c ).to be_narray_like NArray[ 0.19, 0.27 ]
     end
 
     it "should choose #convolve_basic for small inputs" do
