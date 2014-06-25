@@ -2,6 +2,7 @@
 
 [![Gem Version](https://badge.fury.io/rb/convolver.png)](http://badge.fury.io/rb/convolver)
 [![Build Status](https://travis-ci.org/neilslater/convolver.png?branch=master)](http://travis-ci.org/neilslater/convolver)
+[![Inline docs](http://inch-ci.org/github/neilslater/convolver.png?branch=master)](http://inch-ci.org/github/neilslater/convolver)
 [![Dependency Status](https://gemnasium.com/neilslater/convolver.png)](https://gemnasium.com/neilslater/convolver)
 
 Calculates discrete convolution between two multi-dimensional arrays of floats.
