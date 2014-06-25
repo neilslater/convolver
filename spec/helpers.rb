@@ -1,6 +1,10 @@
 # convolver/spec/helpers.rb
-require 'convolver'
+require 'coveralls'
 require 'mocha/api'
+
+Coveralls.wear!
+
+require 'convolver'
 
 # Matcher compares NArrays numerically
 RSpec::Matchers.define :be_narray_like do |expected_narray|
