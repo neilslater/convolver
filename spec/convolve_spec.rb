@@ -10,6 +10,18 @@ describe Convolver do
       expect( c ).to be_narray_like NArray[ 0.19, 0.27 ]
     end
 
+    it "should process convolutions of different sizes" do
+      [10,50,100].each do |asize|
+        [5,25,40].each do |bsize|
+          next unless bsize < asize
+          a = NArray.sfloat(50,50).random()
+          b = NArray.sfloat(10,10).random()
+          c = Convolver.convolve( a, b )
+          expect( c ).to be_a NArray
+        end
+      end
+    end
+
     it "should choose #convolve_basic for small inputs" do
       a = NArray.sfloat(50,50).random()
       b = NArray.sfloat(10,10).random()
