@@ -11,8 +11,10 @@ describe Convolver do
     end
 
     it "should process convolutions of different sizes" do
-      [10,50,100,150].each do |asize|
-        [5,25,40,75].each do |bsize|
+      # The variety here is to ensure all branches of optimisation algorithm
+      # are covered
+      [10,30,50,80,100,120,150,200].each do |asize|
+        [5,10,25,30,50,75].each do |bsize|
           next unless bsize < asize
           a = NArray.sfloat(asize,asize).random()
           b = NArray.sfloat(bsize,bsize).random()
