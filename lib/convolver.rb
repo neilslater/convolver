@@ -64,7 +64,7 @@ module Convolver
   # @param [NArray] kernel must be same size or smaller than signal in each dimension
   # @return [Float] rough estimate of time for convolution compared to baseline
   def self.predict_convolve_fft_time signal, kernel
-    16 * 4.55e-08 * combined_shape(signal.shape,kernel.shape).inject(1) { |t,x| t * x * Math.log(x) }
+    16 * 4.55e-08 * result_shape(signal.shape,kernel.shape).inject(1) { |t,x| t * x * Math.log(x) }
   end
 
   # A rough estimate of time that #convolve will take, based on complexity
@@ -82,15 +82,6 @@ module Convolver
 
   def self.shape_to_size shape
     shape.inject(1) { |t,x| t * x }
-  end
-
-  def self.combined_shape signal_shape, kernel_shape
-    combined_shape = [  ]
-    signal_shape.each_with_index do |signal_size, i|
-      kernel_size = kernel_shape[i]
-      combined_shape[i] = signal_size + kernel_size - 1
-    end
-    combined_shape
   end
 
   def self.result_shape signal_shape, kernel_shape
