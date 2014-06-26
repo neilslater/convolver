@@ -11,13 +11,17 @@ describe Convolver do
     end
 
     it "should process convolutions of different sizes" do
-      [10,50,100].each do |asize|
-        [5,25,40].each do |bsize|
+      [10,50,100,150].each do |asize|
+        [5,25,40,75].each do |bsize|
           next unless bsize < asize
-          a = NArray.sfloat(50,50).random()
-          b = NArray.sfloat(10,10).random()
+          a = NArray.sfloat(asize,asize).random()
+          b = NArray.sfloat(bsize,bsize).random()
           c = Convolver.convolve( a, b )
-          expect( c ).to be_a NArray
+
+          # We should always match output of convolve_basic irrespective
+          # of what the optimal choice of algorithm is (larger error allowed here due to rounding)
+          expect_result = Convolver.convolve_basic( a, b )
+          expect( c ).to be_narray_like( expect_result, 1e-6 )
         end
       end
     end

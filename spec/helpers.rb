@@ -7,7 +7,7 @@ Coveralls.wear!
 require 'convolver'
 
 # Matcher compares NArrays numerically
-RSpec::Matchers.define :be_narray_like do |expected_narray|
+RSpec::Matchers.define :be_narray_like do |expected_narray, mse = 1e-9|
   match do |given|
     @error = nil
     if ! given.is_a?(NArray)
@@ -17,7 +17,7 @@ RSpec::Matchers.define :be_narray_like do |expected_narray|
     else
       d = given - expected_narray
       difference =  ( d * d ).sum / d.size
-      if difference > 1e-9
+      if difference > mse
         @error = "Numerical difference with mean square error #{difference}"
       end
     end
