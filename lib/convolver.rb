@@ -26,7 +26,8 @@ module Convolver
     end
 
     # Factor of two to allow for large uncertainty in predictions for FFTW3
-    if predict_convolve_fft_time( signal, kernel ) < 2 * basic_time_predicted
+    fft_time_predicted = predict_convolve_fft_time( signal, kernel )
+    if fft_time_predicted < 2 * basic_time_predicted
       return convolve_fftw3( signal, kernel )
     end
 
