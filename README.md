@@ -54,11 +54,6 @@ small convolutions are processed directly by multiplying out all combinations an
 and large convolutions are processed using FFTW3 to convert to frequency space where convolution
 is simpler and faster to calculate, then convert back.
 
-## Convolutional Neural Nets
-
-Code for CNNs in Ruby, based on the convolve_basic method from this gem, is planned for a
-new gem ```co_ne_ne```.
-
 ## Contributing
 
 1. Fork it
