@@ -31,16 +31,16 @@ describe Convolver do
     it "should choose #convolve_basic for small inputs" do
       a = NArray.sfloat(50,50).random()
       b = NArray.sfloat(10,10).random()
-      Convolver.expects( :convolve_basic ).once
-      Convolver.expects( :convolve_fftw3 ).never
+      expect(Convolver).to receive(:convolve_basic).once
+      expect(Convolver).to_not receive(:convolve_fftw3)
       c = Convolver.convolve( a, b )
     end
 
     it "should choose #convolve_fftw3 for large inputs" do
       a = NArray.sfloat(500,500).random()
       b = NArray.sfloat(100,100).random()
-      Convolver.expects( :convolve_basic ).never
-      Convolver.expects( :convolve_fftw3 ).once
+      expect(Convolver).to receive(:convolve_fftw3).once
+      expect(Convolver).to_not receive(:convolve_basic)
       c = Convolver.convolve( a, b )
     end
 

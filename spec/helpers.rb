@@ -1,6 +1,5 @@
 # convolver/spec/helpers.rb
 require 'coveralls'
-require 'mocha/api'
 
 Coveralls.wear!
 
