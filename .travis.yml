@@ -6,6 +6,13 @@ cache: bundler
 
 os:
   - linux
+  - macos
+
+addons:
+  apt:
+    packages: libfftw3-dev
+  homebrew:
+    packages: fftw
 
 rvm:
   - "2.2.10"  
