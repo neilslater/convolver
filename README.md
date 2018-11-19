@@ -5,7 +5,6 @@
 [![Coverage Status](https://coveralls.io/repos/neilslater/convolver/badge.png?branch=master)](https://coveralls.io/r/neilslater/convolver?branch=master)
 [![Inline docs](http://inch-ci.org/github/neilslater/convolver.png?branch=master)](http://inch-ci.org/github/neilslater/convolver)
 [![Code Climate](https://codeclimate.com/github/neilslater/convolver.png)](https://codeclimate.com/github/neilslater/convolver)
-[![Dependency Status](https://gemnasium.com/neilslater/convolver.png)](https://gemnasium.com/neilslater/convolver)
 
 Calculates discrete convolution between two multi-dimensional arrays of floats.
 See http://en.wikipedia.org/wiki/Convolution
@@ -61,3 +60,7 @@ is simpler and faster to calculate, then convert back.
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+## Contributors
+
+ * [Dima Ermilov](https://github.com/adworse) contributed fix to support compiling under Windows.
