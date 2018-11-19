@@ -4,7 +4,11 @@ require "rubygems"
 
 # Following code stolen shamelessly from fftw3 gem:
 narray_dir = File.dirname(Gem.find_files("narray.h").first) rescue $sitearchdir
-dir_config('narray', narray_dir, narray_dir)
+if /cygwin|mingw/ =~ RUBY_PLATFORM
+  dir_config('narray', narray_dir, "#{narray_dir}/src")
+else
+  dir_config('narray', narray_dir, narray_dir)
+end
 
 if ( ! ( have_header("narray.h") && have_header("narray_config.h") ) ) then
    print <<-EOS
