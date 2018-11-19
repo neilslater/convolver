@@ -1,8 +1,12 @@
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libfftw3-dev
- - gem install bundler
 language: ruby
+cache: bundler
+
+os:
+  - linux
+
 rvm:
   - "2.2.10"  
   - "2.3.8"
