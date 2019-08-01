@@ -13,6 +13,7 @@ addons:
   homebrew:
     packages:
     - fftw
+    update: true
 
 rvm:
   - "2.3.8"
