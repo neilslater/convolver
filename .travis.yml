@@ -8,9 +8,11 @@ os:
 addons:
   apt:
     update: true
-    packages: libfftw3-dev
+    packages:
+    - libfftw3-dev
   homebrew:
-    packages: fftw
+    packages:
+    - fftw
 
 rvm:
   - "2.3.8"
