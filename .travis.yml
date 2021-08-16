@@ -3,7 +3,6 @@ cache: bundler
 
 os:
   - linux
-  - osx
 
 addons:
   apt:
@@ -16,8 +15,6 @@ addons:
     update: true
 
 rvm:
-  - "2.4.5"
-  - "2.5.5"
-  - "2.6.3"
   - "2.7.1"
+  - "3.0.0"
 
