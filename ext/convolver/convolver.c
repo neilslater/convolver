@@ -113,7 +113,7 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   return val_c;
 }
 
-void Init_convolver() {
+void Init_convolver(void) {
   Convolver = rb_define_module( "Convolver" );
   rb_define_singleton_method( Convolver, "convolve_basic", narray_convolve, 2 );
 

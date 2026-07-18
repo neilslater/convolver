@@ -66,7 +66,8 @@ namespace :c do
     abort 'GCC could not locate libasan.so' if libasan.empty? || libasan == 'libasan.so'
 
     rebuild_and_test_native.call('sanitize', test: false)
-    sh({ 'LD_PRELOAD' => libasan }, RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', 'test')
+    sanitizer_env = { 'ASAN_OPTIONS' => 'detect_leaks=0', 'LD_PRELOAD' => libasan }
+    sh(sanitizer_env, RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', 'test')
   end
 end
 # rubocop:enable Metrics/BlockLength

@@ -37,7 +37,7 @@ case ENV.fetch('CONVOLVER_NATIVE_MODE', 'release')
 when 'release'
   $CFLAGS << ' -O3 -funroll-loops'
 when 'lint'
-  $CFLAGS << ' -O0 -g -Wall -Wextra -Wpedantic -Wformat=2 -Werror'
+  $CFLAGS << ' -std=gnu2x -O0 -g -Wall -Wextra -Wpedantic -Wformat=2 -Werror'
   # narray 0.6 owns the wrapped objects and exposes them through the legacy
   # Data_Get_Struct API, so Convolver cannot migrate those accesses to TypedData.
   $CFLAGS << ' -DRUBY_UNTYPED_DATA_WARNING=0'
