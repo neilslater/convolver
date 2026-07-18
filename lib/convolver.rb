@@ -5,6 +5,7 @@ require 'convolver/convolver'
 require 'convolver/version'
 require 'fftw3'
 
+# Convolution operations for NArray values.
 module Convolver
   # Chooses and calls likely fastest method from #convolve_basic and #convolve_fftw3.
   # The two parameters must have the same rank. The output has same rank, its size in each
@@ -39,17 +40,8 @@ module Convolver
   # @return [NArray] result of convolving signal with kernel
   def self.convolve_fftw3(signal, kernel)
     combined_shape, shift_by, ranges = fft_offsets(signal.shape, kernel.shape)
-
-    mod_a = NArray.sfloat(*combined_shape)
-    mod_a[*shift_by] = signal
-
-    mod_b = NArray.sfloat(*combined_shape)
-
-    Convolver.fit_kernel_backwards(mod_b, kernel)
-
-    afreqs = FFTW3.fft(mod_a)
-    bfreqs = FFTW3.fft(mod_b)
-    cfreqs = afreqs * bfreqs
+    mod_a, mod_b = fft_inputs(signal, kernel, combined_shape, shift_by)
+    cfreqs = FFTW3.fft(mod_a) * FFTW3.fft(mod_b)
 
     (FFTW3.ifft(cfreqs).real * (1.0 / mod_a.size))[*ranges]
   end
@@ -89,18 +81,20 @@ module Convolver
   end
 
   def self.fft_offsets(signal_shape, kernel_shape)
-    combined_shape = []
-    shift_by = []
-    ranges = []
-    signal_shape.each_with_index do |signal_size, i|
-      kernel_size = kernel_shape[i]
+    signal_shape.zip(kernel_shape).map { |sizes| fft_offset(*sizes) }.transpose
+  end
 
-      combined_shape[i] = signal_size + kernel_size - 1
-      output_size = signal_size - kernel_size + 1
-      output_offset = kernel_size - 1
-      shift_by[i] = kernel_size / 2
-      ranges[i] = (output_offset...(output_offset + output_size))
-    end
-    [combined_shape, shift_by, ranges]
+  def self.fft_inputs(signal, kernel, combined_shape, shift_by)
+    signal_input = NArray.sfloat(*combined_shape)
+    signal_input[*shift_by] = signal
+    kernel_input = NArray.sfloat(*combined_shape)
+    fit_kernel_backwards(kernel_input, kernel)
+    [signal_input, kernel_input]
+  end
+
+  def self.fft_offset(signal_size, kernel_size)
+    output_offset = kernel_size - 1
+    output_size = signal_size - kernel_size + 1
+    [signal_size + kernel_size - 1, kernel_size / 2, output_offset...(output_offset + output_size)]
   end
 end

@@ -33,17 +33,21 @@ describe Convolver do
     it 'chooses #convolve_basic for small inputs' do
       a = NArray.sfloat(50, 50).random
       b = NArray.sfloat(10, 10).random
-      expect(described_class).to receive(:convolve_basic).once
-      expect(described_class).not_to receive(:convolve_fftw3)
+      allow(described_class).to receive(:convolve_basic)
+      allow(described_class).to receive(:convolve_fftw3)
       described_class.convolve(a, b)
+      expect(described_class).to have_received(:convolve_basic).once
+      expect(described_class).not_to have_received(:convolve_fftw3)
     end
 
     it 'chooses #convolve_fftw3 for large inputs' do
       a = NArray.sfloat(500, 500).random
       b = NArray.sfloat(100, 100).random
-      expect(described_class).to receive(:convolve_fftw3).once
-      expect(described_class).not_to receive(:convolve_basic)
+      allow(described_class).to receive(:convolve_fftw3)
+      allow(described_class).to receive(:convolve_basic)
       described_class.convolve(a, b)
+      expect(described_class).to have_received(:convolve_fftw3).once
+      expect(described_class).not_to have_received(:convolve_basic)
     end
   end
 end

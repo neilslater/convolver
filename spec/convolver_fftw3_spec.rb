@@ -128,7 +128,7 @@ describe Convolver do
 
       it 'produces same results for 2D arrays' do
         (3..10).each do |signal_x|
-          (signal_x - 2..signal_x + 2).each do |signal_y|
+          ((signal_x - 2)..(signal_x + 2)).each do |signal_y|
             (1..signal_x).each do |kernel_x|
               (1..signal_y).each do |kernel_y|
                 signal = NArray.sfloat(signal_x, signal_y).random
@@ -144,8 +144,8 @@ describe Convolver do
 
       it 'produces same results for 3D arrays' do
         (3..5).each do |signal_x|
-          (signal_x - 2..signal_x + 2).each do |signal_y|
-            (signal_x - 2..signal_x + 2).each do |signal_z|
+          ((signal_x - 2)..(signal_x + 2)).each do |signal_y|
+            ((signal_x - 2)..(signal_x + 2)).each do |signal_z|
               (1..signal_x).each do |kernel_x|
                 (1..signal_y).each do |kernel_y|
                   (1..signal_z).each do |kernel_z|

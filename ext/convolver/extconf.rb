@@ -17,14 +17,14 @@ else
 end
 
 unless have_header('narray.h') && have_header('narray_config.h')
-  print <<-EOS
+  print <<-ERROR_MESSAGE
    ** configure error **
    Header narray.h or narray_config.h is not found. If you have these files in
    /narraydir/include, try the following:
 
    % ruby extconf.rb --with-narray-include=/narraydir/include
 
-  EOS
+  ERROR_MESSAGE
   exit(-1)
 end
 
