@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # ext/convolver/extconf.rb
 require 'mkmf'
 require 'rubygems'

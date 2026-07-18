@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # convolver/spec/helpers.rb
 require 'simplecov'
 SimpleCov.start

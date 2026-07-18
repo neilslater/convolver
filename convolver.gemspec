@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+require 'English'
 lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'convolver/version'
@@ -25,7 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'simplecov', '>= 0.22'
   spec.add_development_dependency 'yard', '>= 0.8.7.2'
 
-  spec.files         = `git ls-files`.split($/)
+  spec.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.extensions    = spec.files.grep(%r{/extconf\.rb$})
