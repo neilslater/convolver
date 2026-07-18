@@ -28,6 +28,8 @@ static VALUE narray_fit_backwards( VALUE self, VALUE a, VALUE b ) {
   int target_rank, i;
   int shift_by[LARGEST_RANK];
 
+  (void) self;
+
   val_a = na_cast_object(a, NA_SFLOAT);
   GetNArray( val_a, na_a );
 
@@ -74,6 +76,8 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   volatile VALUE val_a, val_b, val_c;
   int target_rank, i;
   int target_shape[LARGEST_RANK];
+
+  (void) self;
 
   val_a = na_cast_object(a, NA_SFLOAT);
   GetNArray( val_a, na_a );

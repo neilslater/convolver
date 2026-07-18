@@ -19,6 +19,7 @@ inline void corner_reset( int rank, int *shape, int *rev_indices ) {
 // Counts indices down, returns number of ranks that reset
 inline int corner_dec( int rank, int *shape, int *rev_indices ) {
   int i = 0;
+  (void) rank;
   while ( ! rev_indices[i]-- ) {
     rev_indices[i] = shape[i] - 1;
     i++;
@@ -48,12 +49,11 @@ void convolve_raw(
     int in_rank, int *in_shape, float *in_ptr,
     int kernel_rank, int *kernel_shape, float *kernel_ptr,
     int out_rank, int *out_shape, float *out_ptr ) {
-  int i, j, in_size, kernel_size, kernel_aligned, out_size, offset;
+  int i, j, kernel_size, kernel_aligned, out_size, offset;
   int out_co_incr[LARGEST_RANK], kernel_co_incr[LARGEST_RANK];
   int ker_q[LARGEST_RANK], out_q[LARGEST_RANK];
   int *kernel_co_incr_cache;
 
-  in_size = size_from_shape( in_rank, in_shape );
   kernel_size = size_from_shape( kernel_rank, kernel_shape );
   kernel_aligned = 4 * (kernel_size/4);
   out_size = size_from_shape( out_rank, out_shape );
