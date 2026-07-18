@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'bundler/gem_tasks'
+require 'English'
 require 'fileutils'
 require 'open3'
 require 'rspec/core/rake_task'
@@ -67,7 +68,29 @@ namespace :c do
 
     rebuild_and_test_native.call('sanitize', test: false)
     sanitizer_env = { 'ASAN_OPTIONS' => 'detect_leaks=0', 'LD_PRELOAD' => libasan }
-    sh(sanitizer_env, RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', 'test')
+    probes = {
+      'Ruby startup' => [RbConfig.ruby, '-e', 'exit'],
+      'extension load' => [RbConfig.ruby, '-rbundler/setup', '-Ilib', '-e', 'require "convolver"'],
+      'basic convolution' => [
+        RbConfig.ruby, '-rbundler/setup', '-Ilib', '-e',
+        'require "convolver"; Convolver.convolve_basic(NArray[0.3, 0.4, 0.5], NArray[1.3, -0.5])'
+      ],
+      'Ruby specs' => [RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', 'test']
+    }
+
+    results = probes.map do |label, command|
+      puts "\n== Sanitizer probe: #{label} =="
+      success = system(sanitizer_env, *command)
+      [label, success, $CHILD_STATUS]
+    end
+
+    puts "\n== Sanitizer probe summary =="
+    results.each do |label, success, status|
+      detail = status&.signaled? ? "signal #{status.termsig}" : "exit #{status&.exitstatus}"
+      puts format('%<label>-20s %<result>s (%<detail>s)',
+                  label: label, result: success ? 'PASS' : 'FAIL', detail: detail)
+    end
+    abort 'One or more sanitizer probes failed' unless results.all? { |_label, success, _status| success }
   end
 end
 # rubocop:enable Metrics/BlockLength
