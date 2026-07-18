@@ -75,6 +75,18 @@ is simpler and faster to calculate, then convert back.
 
 ## Contributing
 
+The Ruby specs also exercise the native extension. Native-code quality checks are available as
+separate Rake tasks:
+
+    bundle exec rake c:lint
+    bundle exec rake c:coverage  # GCC and gcovr required
+    bundle exec rake c:sanitize
+
+`c:coverage` writes an HTML report to `coverage/c/index.html` and Cobertura XML to
+`coverage/c/cobertura.xml`. The pull-request workflow uploads these reports as a `c-coverage`
+artifact and includes the text summary in the job summary. `c:sanitize` rebuilds the extension with
+AddressSanitizer and UBSan and currently requires Linux and GCC.
+
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)

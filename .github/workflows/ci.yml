@@ -38,3 +38,53 @@ jobs:
 
       - name: Run RuboCop
         run: bundle exec rubocop
+
+  native-quality:
+    name: Native ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - lint
+          - coverage
+          - sanitize
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcovr libfftw3-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler: latest
+          bundler-cache: true
+
+      - name: Run native quality check
+        run: bundle exec rake c:${{ matrix.check }}
+
+      - name: Add C coverage to job summary
+        if: matrix.check == 'coverage'
+        run: |
+          echo '## Native C coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat coverage/c/summary.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Download the c-coverage artifact for the detailed HTML report.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload C coverage report
+        if: matrix.check == 'coverage'
+        uses: actions/upload-artifact@v4
+        with:
+          name: c-coverage
+          path: coverage/c
+          if-no-files-found: error
+          retention-days: 14

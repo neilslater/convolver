@@ -97,4 +97,6 @@ module Convolver
     output_size = signal_size - kernel_size + 1
     [signal_size + kernel_size - 1, kernel_size / 2, output_offset...(output_offset + output_size)]
   end
+
+  private_class_method :fit_kernel_backwards
 end

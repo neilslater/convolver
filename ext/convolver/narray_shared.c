@@ -22,7 +22,7 @@ void na_quick_pos_to_idxs( int rank, int *shape, int pos, int *idxs ) {
 }
 
 // This is copied from na_array.c, with safety checks and temp vars removed
-inline int na_inline_idxs_to_pos( int rank, int *shape, int *idxs ) {
+static inline int na_inline_idxs_to_pos( int rank, int *shape, int *idxs ) {
   int i, pos = 0;
   for ( i = rank - 1; i >= 0; i-- ) {
     pos = pos * shape[i] + idxs[i];
@@ -31,7 +31,7 @@ inline int na_inline_idxs_to_pos( int rank, int *shape, int *idxs ) {
 }
 
 // This is inverse of above
-inline void na_inline_pos_to_idxs( int rank, int *shape, int pos, int *idxs ) {
+static inline void na_inline_pos_to_idxs( int rank, int *shape, int pos, int *idxs ) {
   int i;
   for ( i = 0; i < rank; i++ ) {
     idxs[ i ] = pos % shape[i];

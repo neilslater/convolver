@@ -33,5 +33,29 @@ if /cygwin|mingw/ =~ RUBY_PLATFORM
   have_library('narray') || raise('ERROR: narray library is not found')
 end
 
-$CFLAGS << ' -O3 -funroll-loops'
+case ENV.fetch('CONVOLVER_NATIVE_MODE', 'release')
+when 'release'
+  $CFLAGS << ' -O3 -funroll-loops'
+when 'lint'
+  $CFLAGS << ' -std=gnu2x -O0 -g -Wall -Wextra -Wpedantic -Wformat=2 -Werror'
+  # narray 0.6 owns the wrapped objects and exposes them through the legacy
+  # Data_Get_Struct API, so Convolver cannot migrate those accesses to TypedData.
+  $CFLAGS << ' -DRUBY_UNTYPED_DATA_WARNING=0'
+  # Ruby 3.4 headers intentionally use compatibility declarations that recent
+  # Clang diagnoses under -Wpedantic. Keep those from obscuring extension warnings.
+  if RbConfig::CONFIG.fetch('CC').match?(/clang/) || RbConfig::CONFIG.fetch('host_os').match?(/darwin/)
+    $CFLAGS << ' -Wno-c23-extensions -Wno-strict-prototypes -Wno-unused-parameter'
+    $CFLAGS << ' -Wno-default-const-init-field-unsafe'
+  end
+when 'coverage'
+  $CFLAGS << ' -O0 -g --coverage'
+  $LDFLAGS << ' --coverage'
+when 'sanitize'
+  sanitizer_flags = ' -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer'
+  $CFLAGS << sanitizer_flags
+  $LDFLAGS << ' -fsanitize=address,undefined'
+else
+  abort "Unknown CONVOLVER_NATIVE_MODE: #{ENV.fetch('CONVOLVER_NATIVE_MODE', nil)}"
+end
+
 create_makefile('convolver/convolver')

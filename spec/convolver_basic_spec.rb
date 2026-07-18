@@ -85,5 +85,23 @@ describe Convolver do
         [[[8.5, 8.2], [11.34, 9.68]], [[7.68, 6.56], [11.24, 7.16]], [[9.14, 6.54], [12.44, 9.2]]]
       ]
     end
+
+    it 'rejects arrays with different ranks' do
+      expect { described_class.convolve_basic(NArray.sfloat(2), NArray.sfloat(2, 2)) }
+        .to raise_error(ArgumentError, 'narray a must have equal rank to narray b (a rank 1, b rank 2)')
+    end
+
+    it 'rejects arrays above the maximum supported rank' do
+      rank_17_shape = Array.new(17, 1)
+      rank_17_array = NArray.sfloat(*rank_17_shape)
+
+      expect { described_class.convolve_basic(rank_17_array, rank_17_array) }
+        .to raise_error(ArgumentError, 'exceeded maximum narray rank for convolve of 16')
+    end
+
+    it 'rejects a kernel larger than the signal' do
+      expect { described_class.convolve_basic(NArray.sfloat(2), NArray.sfloat(3)) }
+        .to raise_error(ArgumentError, 'narray b is bigger in one or more dimensions than narray a')
+    end
   end
 end
