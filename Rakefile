@@ -50,7 +50,8 @@ namespace :c do
     rebuild_and_test_native.call('coverage')
     FileUtils.mkdir_p('coverage/c')
     sh 'gcovr', '--root', '.', '--filter', 'ext/convolver/', '--html-details',
-       'coverage/c/index.html', '--xml', 'coverage/c/cobertura.xml', '--print-summary'
+       'coverage/c/index.html', '--xml', 'coverage/c/cobertura.xml', '--txt',
+       'coverage/c/summary.txt', '--print-summary'
   end
 
   desc 'Run the Ruby specs with AddressSanitizer and UBSan (Linux recommended)'

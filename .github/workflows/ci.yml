@@ -71,9 +71,20 @@ jobs:
       - name: Run native quality check
         run: bundle exec rake c:${{ matrix.check }}
 
+      - name: Add C coverage to job summary
+        if: matrix.check == 'coverage'
+        run: |
+          echo '## Native C coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat coverage/c/summary.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Download the c-coverage artifact for the detailed HTML report.' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload C coverage report
         if: matrix.check == 'coverage'
         uses: actions/upload-artifact@v4
         with:
           name: c-coverage
           path: coverage/c
+          if-no-files-found: error
+          retention-days: 14

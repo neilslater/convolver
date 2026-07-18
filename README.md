@@ -83,8 +83,9 @@ separate Rake tasks:
     bundle exec rake c:sanitize
 
 `c:coverage` writes an HTML report to `coverage/c/index.html` and Cobertura XML to
-`coverage/c/cobertura.xml`. `c:sanitize` rebuilds the extension with AddressSanitizer and UBSan and
-currently requires Linux and GCC.
+`coverage/c/cobertura.xml`. The pull-request workflow uploads these reports as a `c-coverage`
+artifact and includes the text summary in the job summary. `c:sanitize` rebuilds the extension with
+AddressSanitizer and UBSan and currently requires Linux and GCC.
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
