@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", ">= 2.13.0"
   spec.add_development_dependency "rake", ">= 1.9.1"
   spec.add_development_dependency "rake-compiler", ">= 0.8.3"
-  spec.add_development_dependency "coveralls", ">= 0.6.7"
+  spec.add_development_dependency "simplecov", ">= 0.22"
 
   spec.files         = `git ls-files`.split($/)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
