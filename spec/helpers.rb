@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 # convolver/spec/helpers.rb
-require 'simplecov'
-SimpleCov.start
+unless ENV['CONVOLVER_DISABLE_SIMPLECOV']
+  require 'simplecov'
+  SimpleCov.start
+end
 
 require 'convolver'
 
