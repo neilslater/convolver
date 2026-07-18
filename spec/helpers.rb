@@ -8,24 +8,20 @@ require 'convolver'
 RSpec::Matchers.define :be_narray_like do |expected_narray, mse = 1e-9|
   match do |given|
     @error = nil
-    if ! given.is_a?(NArray)
-      @error = "Wrong class."
+    if !given.is_a?(NArray)
+      @error = 'Wrong class.'
     elsif given.shape != expected_narray.shape
-      @error = "Shapes are different."
+      @error = 'Shapes are different.'
     else
       d = given - expected_narray
-      difference =  ( d * d ).sum / d.size
-      if difference > mse
-        @error = "Numerical difference with mean square error #{difference}"
-      end
+      difference = (d * d).sum / d.size
+      @error = "Numerical difference with mean square error #{difference}" if difference > mse
     end
     @given = given.clone
 
-    if @error
-      @expected = expected_narray.clone
-    end
+    @expected = expected_narray.clone if @error
 
-    ! @error
+    !@error
   end
 
   failure_message do
@@ -39,7 +35,7 @@ RSpec::Matchers.define :be_narray_like do |expected_narray, mse = 1e-9|
     Unwanted: #{@given.inspect}"
   end
 
-  description do |given, expected|
-    "numerically very close to example"
+  description do |_given, _expected|
+    'numerically very close to example'
   end
 end
