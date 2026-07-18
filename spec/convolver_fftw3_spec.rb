@@ -163,4 +163,28 @@ describe Convolver do
       end
     end
   end
+
+  describe '.fit_kernel_backwards' do
+    it 'is private' do
+      expect(described_class).not_to respond_to(:fit_kernel_backwards)
+    end
+
+    it 'rejects arrays with different ranks' do
+      expect { described_class.send(:fit_kernel_backwards, NArray.sfloat(2), NArray.sfloat(2, 2)) }
+        .to raise_error(ArgumentError, 'narray a must have equal rank to narray b (a rank 1, b rank 2)')
+    end
+
+    it 'rejects arrays above the maximum supported rank' do
+      rank_17_shape = Array.new(17, 1)
+      rank_17_array = NArray.sfloat(*rank_17_shape)
+
+      expect { described_class.send(:fit_kernel_backwards, rank_17_array, rank_17_array) }
+        .to raise_error(ArgumentError, 'exceeded maximum narray rank for convolve of 16')
+    end
+
+    it 'rejects a kernel larger than the target' do
+      expect { described_class.send(:fit_kernel_backwards, NArray.sfloat(2), NArray.sfloat(3)) }
+        .to raise_error(ArgumentError, 'no space for backward fit')
+    end
+  end
 end

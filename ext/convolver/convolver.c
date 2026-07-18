@@ -86,7 +86,7 @@ static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
   GetNArray( val_b, na_b );
 
   if ( na_a->rank != na_b->rank ) {
-    rb_raise( rb_eArgError, "narray a must have equal rank to narray b (a rack %d, b rank %d)", na_a->rank,  na_b->rank );
+    rb_raise( rb_eArgError, "narray a must have equal rank to narray b (a rank %d, b rank %d)", na_a->rank,  na_b->rank );
   }
 
   if ( na_a->rank > LARGEST_RANK ) {
