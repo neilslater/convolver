@@ -25,6 +25,17 @@ installed the headers and libraries:
 The local Bundler setting is written to `.bundle/config`, which is intentionally
 not committed because the Homebrew prefix depends on the machine.
 
+### Known warning with Ruby 3.4
+
+The first use of `NArray` may emit this warning:
+
+    warning: undefining the allocator of T_DATA class NArray
+
+This comes from the legacy native allocation API used by `narray` 0.6.1.2. Ruby
+disables the inherited allocator when the first native NArray object is created.
+The warning does not affect convolver's results; removing it properly requires a
+fix in `narray` or a future migration to a maintained NArray implementation.
+
 ### Installing the gem
 
 Add this line to your application's Gemfile:
