@@ -1,8 +1,6 @@
 # Convolver
 
 [![Gem Version](https://badge.fury.io/rb/convolver.png)](http://badge.fury.io/rb/convolver)
-[![Build Status](https://api.travis-ci.com/neilslater/convolver.png?branch=master)](https://travis-ci.com/github/neilslater/convolver)
-[![Coverage Status](https://coveralls.io/repos/neilslater/convolver/badge.png?branch=master)](https://coveralls.io/r/neilslater/convolver?branch=master)
 [![Code Climate](https://codeclimate.com/github/neilslater/convolver.png)](https://codeclimate.com/github/neilslater/convolver)
 
 Calculates discrete convolution between two multi-dimensional arrays of floats.
