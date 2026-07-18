@@ -1,0 +1,16 @@
+plugins:
+  - rubocop-rake
+  - rubocop-rspec
+
+AllCops:
+  NewCops: enable
+
+Style/GlobalVars:
+  Exclude:
+    - ext/convolver/extconf.rb
+
+RSpec/ExampleLength:
+  Max: 30
+
+RSpec/MultipleExpectations:
+  Max: 7

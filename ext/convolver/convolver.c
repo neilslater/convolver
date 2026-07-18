@@ -3,7 +3,6 @@
 #include <ruby.h>
 #include "narray.h"
 #include <stdio.h>
-#include <xmmintrin.h>
 
 #include "narray_shared.h"
 #include "convolve_raw.h"

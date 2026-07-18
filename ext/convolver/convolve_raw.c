@@ -76,13 +76,16 @@ void convolve_raw(
 
   // Main convolve loop
   for ( i = 0; i < out_size; i++ ) {
+#if CONVOLVER_USE_SSE
     __m128 simd_x, simd_y, simd_t;
-    float t = 0.0;
     float v[4];
     simd_t = _mm_setzero_ps();
+#endif
+    float t = 0.0;
 
     offset += out_co_incr[ corner_dec( out_rank, out_shape, out_q ) ];
 
+#if CONVOLVER_USE_SSE
     // Use SIMD for all the aligned values in groups of 4
     for ( j = 0; j < kernel_aligned; j +=4 ) {
       simd_x = _mm_load_ps( kernel_ptr + j );
@@ -93,13 +96,24 @@ void convolve_raw(
       simd_t = _mm_add_ps( simd_x, simd_t );
     }
     _mm_store_ps( v, simd_t );
+#else
+    // SSE is unavailable on architectures such as Apple Silicon.
+    // Use the same calculation without x86-specific intrinsics.
+    for ( j = 0; j < kernel_aligned; j++ ) {
+      t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[j];
+    }
+#endif
 
     // Complete any remaining 1,2 or 3 items one at a time
     for ( j = kernel_aligned; j < kernel_size; j++ ) {
       t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[ j ];
     }
 
+#if CONVOLVER_USE_SSE
     out_ptr[i] = v[0] + v[1] + v[2] + v[3] + t;
+#else
+    out_ptr[i] = t;
+#endif
   }
 
   xfree( kernel_co_incr_cache );
