@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'bundler/gem_tasks'
-require 'English'
 require 'fileutils'
 require 'open3'
 require 'rspec/core/rake_task'
@@ -67,36 +66,12 @@ namespace :c do
     abort 'GCC could not locate libasan.so' if libasan.empty? || libasan == 'libasan.so'
 
     rebuild_and_test_native.call('sanitize', test: false)
-    sanitizer_env = { 'ASAN_OPTIONS' => 'detect_leaks=0', 'LD_PRELOAD' => libasan }
-    rspec_command = [RbConfig.ruby, '-S', 'bundle', 'exec', 'rspec']
-    without_simplecov = { 'CONVOLVER_DISABLE_SIMPLECOV' => '1' }
-    probes = [
-      ['Ruby startup', {}, [RbConfig.ruby, '-e', 'exit']],
-      ['extension load', {}, [RbConfig.ruby, '-rbundler/setup', '-Ilib', '-e', 'require "convolver"']],
-      ['basic convolution', {}, [
-        RbConfig.ruby, '-rbundler/setup', '-Ilib', '-e',
-        'require "convolver"; Convolver.convolve_basic(NArray[0.3, 0.4, 0.5], NArray[1.3, -0.5])'
-      ]],
-      ['all specs without SimpleCov', without_simplecov, [*rspec_command, 'spec']],
-      *Dir['spec/*_spec.rb'].map do |spec_file|
-        [File.basename(spec_file), without_simplecov, [*rspec_command, spec_file]]
-      end,
-      ['all specs with SimpleCov', {}, [RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', 'test']]
-    ]
-
-    results = probes.map do |label, extra_env, command|
-      puts "\n== Sanitizer probe: #{label} =="
-      success = system(sanitizer_env.merge(extra_env), *command)
-      [label, success, $CHILD_STATUS]
-    end
-
-    puts "\n== Sanitizer probe summary =="
-    results.each do |label, success, status|
-      detail = status&.signaled? ? "signal #{status.termsig}" : "exit #{status&.exitstatus}"
-      puts format('%<label>-32s %<result>s (%<detail>s)',
-                  label: label, result: success ? 'PASS' : 'FAIL', detail: detail)
-    end
-    abort 'One or more sanitizer probes failed' unless results.all? { |_label, success, _status| success }
+    sanitizer_env = {
+      'ASAN_OPTIONS' => 'detect_leaks=0',
+      'CONVOLVER_DISABLE_SIMPLECOV' => '1',
+      'LD_PRELOAD' => libasan
+    }
+    sh(sanitizer_env, RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', 'test')
   end
 end
 # rubocop:enable Metrics/BlockLength
