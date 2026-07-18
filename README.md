@@ -15,6 +15,16 @@ See http://en.wikipedia.org/wiki/Convolution
 Before you install *convolver*, you should install the FFTW3 library on your system.
 See http://www.fftw.org/ for details.
 
+On macOS with Homebrew, the `fftw3` Ruby gem needs to be told where Homebrew
+installed the headers and libraries:
+
+    brew install fftw
+    bundle config set --local build.fftw3 "--with-fftw3-dir=$(brew --prefix fftw)"
+    bundle install
+
+The local Bundler setting is written to `.bundle/config`, which is intentionally
+not committed because the Homebrew prefix depends on the machine.
+
 ### Installing the gem
 
 Add this line to your application's Gemfile:

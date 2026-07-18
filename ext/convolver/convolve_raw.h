@@ -9,7 +9,12 @@
 #define CONVOLVE_RAW_H
 
 #include <ruby.h>
+#if defined(__SSE__)
 #include <xmmintrin.h>
+#define CONVOLVER_USE_SSE 1
+#else
+#define CONVOLVER_USE_SSE 0
+#endif
 #include "narray_shared.h"
 
 #define LARGEST_RANK 16
