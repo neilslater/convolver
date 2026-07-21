@@ -1,122 +1,89 @@
-// ext/convolver/convolver.c
-
+#include <limits.h>
 #include <ruby.h>
-#include "narray.h"
-#include <stdio.h>
+#include <numo/narray.h>
+#include <numo/intern.h>
 
-#include "narray_shared.h"
 #include "convolve_raw.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+static VALUE mConvolver;
 
-// To hold the module object
-VALUE Convolver = Qnil;
+static void copy_shape(int rank, const size_t *source, int *target) {
+  int i;
 
-/* @overload fit_kernel_backwards( fft_temp_space, kernel )
- * @!visibility private
- * Over-writes fft_temp_space at edges with a reversed copy of kernel, in such a way that
- * an FFTW3-based convolve has a result set in an easy-to-extract position later. This is
- * implemented as a native extension for convenience and speed - to do this with methods provided
- * by narray gem would take several complex steps and be inefficient.
- * @param [NArray<sfloat>] fft_temp_space target array for pre-fft copy of kernel, is over-written
- * @param [NArray] kernel must be same size or smaller than fft_temp_space in each dimension
- * @return [nil]
- */
-static VALUE narray_fit_backwards( VALUE self, VALUE a, VALUE b ) {
-  struct NARRAY *na_a, *na_b;
-  volatile VALUE val_a, val_b;
-  int target_rank, i;
-  int shift_by[LARGEST_RANK];
-
-  (void) self;
-
-  val_a = na_cast_object(a, NA_SFLOAT);
-  GetNArray( val_a, na_a );
-
-  val_b = na_cast_object(b, NA_SFLOAT);
-  GetNArray( val_b, na_b );
-
-  if ( na_a->rank != na_b->rank ) {
-    rb_raise( rb_eArgError, "narray a must have equal rank to narray b (a rank %d, b rank %d)", na_a->rank,  na_b->rank );
-  }
-
-  if ( na_a->rank > LARGEST_RANK ) {
-    rb_raise( rb_eArgError, "exceeded maximum narray rank for convolve of %d", LARGEST_RANK );
-  }
-
-  target_rank = na_a->rank;
-
-  for ( i = 0; i < target_rank; i++ ) {
-    if ( ( na_a->shape[i] - na_b->shape[i] ) < 0 ) {
-      rb_raise( rb_eArgError, "no space for backward fit" );
+  for (i = 0; i < rank; i++) {
+    if (source[rank - i - 1] > INT_MAX) {
+      rb_raise(rb_eArgError, "array dimension exceeds native implementation limit");
     }
-    shift_by[i] = na_b->shape[i] >> 1;
+    target[i] = (int)source[rank - i - 1];
   }
-
-  fit_backwards_raw(
-    target_rank,
-    na_a->shape, (float*) na_a->ptr,
-    na_b->shape, (float*) na_b->ptr,
-    shift_by );
-
-  return Qnil;
 }
 
-
-/* @overload convolve_basic( signal, kernel )
- * Calculates convolution of an array of floats representing a signal, with a second array representing
- * a kernel. The two parameters must have the same rank. The output has same rank, its size in each dimension d is given by
- *  signal.shape[d] - kernel.shape[d] + 1
- * @param [NArray] signal must be same size or larger than kernel in each dimension
- * @param [NArray] kernel must be same size or smaller than signal in each dimension
- * @return [NArray] result of convolving signal with kernel
+/*
+ * Calculates a valid cross-correlation using the direct native implementation.
+ *
+ * @overload convolve_basic(signal, kernel)
+ *   @param signal [Numo::NArray] input values
+ *   @param kernel [Numo::NArray] correlation kernel
+ *   @return [Numo::SFloat] valid cross-correlation result
  */
-static VALUE narray_convolve( VALUE self, VALUE a, VALUE b ) {
-  struct NARRAY *na_a, *na_b, *na_c;
-  volatile VALUE val_a, val_b, val_c;
-  int target_rank, i;
-  int target_shape[LARGEST_RANK];
+static VALUE convolver_convolve_basic(VALUE self, VALUE signal, VALUE kernel) {
+  volatile VALUE signal_value;
+  volatile VALUE kernel_value;
+  volatile VALUE result_value;
+  narray_t *signal_narray;
+  narray_t *kernel_narray;
+  int rank;
+  int i;
+  int signal_shape[LARGEST_RANK];
+  int kernel_shape[LARGEST_RANK];
+  int result_shape[LARGEST_RANK];
+  size_t numo_result_shape[LARGEST_RANK];
 
-  (void) self;
+  (void)self;
 
-  val_a = na_cast_object(a, NA_SFLOAT);
-  GetNArray( val_a, na_a );
-
-  val_b = na_cast_object(b, NA_SFLOAT);
-  GetNArray( val_b, na_b );
-
-  if ( na_a->rank != na_b->rank ) {
-    rb_raise( rb_eArgError, "narray a must have equal rank to narray b (a rank %d, b rank %d)", na_a->rank,  na_b->rank );
+  if (!rb_obj_is_kind_of(signal, numo_cNArray) || !rb_obj_is_kind_of(kernel, numo_cNArray)) {
+    rb_raise(rb_eArgError, "signal and kernel must be Numo::NArray values");
   }
 
-  if ( na_a->rank > LARGEST_RANK ) {
-    rb_raise( rb_eArgError, "exceeded maximum narray rank for convolve of %d", LARGEST_RANK );
+  signal_value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, signal);
+  kernel_value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, kernel);
+  GetNArray(signal_value, signal_narray);
+  GetNArray(kernel_value, kernel_narray);
+
+  if (signal_narray->size == 0 || kernel_narray->size == 0) {
+    rb_raise(rb_eArgError, "signal and kernel must not be empty");
   }
 
-  target_rank = na_a->rank;
+  if (signal_narray->ndim != kernel_narray->ndim) {
+    rb_raise(rb_eArgError, "signal and kernel must have equal rank");
+  }
+  if (signal_narray->ndim > LARGEST_RANK) {
+    rb_raise(rb_eArgError, "maximum supported rank is %d", LARGEST_RANK);
+  }
 
-  for ( i = 0; i < target_rank; i++ ) {
-    target_shape[i] = na_a->shape[i] - na_b->shape[i] + 1;
-    if ( target_shape[i] < 1 ) {
-      rb_raise( rb_eArgError, "narray b is bigger in one or more dimensions than narray a" );
+  rank = signal_narray->ndim;
+  copy_shape(rank, signal_narray->shape, signal_shape);
+  copy_shape(rank, kernel_narray->shape, kernel_shape);
+
+  for (i = 0; i < rank; i++) {
+    result_shape[i] = signal_shape[i] - kernel_shape[i] + 1;
+    if (result_shape[i] < 1) {
+      rb_raise(rb_eArgError, "kernel must not be larger than signal in any dimension");
     }
+    numo_result_shape[rank - i - 1] = (size_t)result_shape[i];
   }
 
-  val_c = na_make_object( NA_SFLOAT, target_rank, target_shape, CLASS_OF( val_a ) );
-  GetNArray( val_c, na_c );
-
+  result_value = nary_new(numo_cSFloat, rank, numo_result_shape);
   convolve_raw(
-    target_rank, na_a->shape, (float*) na_a->ptr,
-    target_rank, na_b->shape, (float*) na_b->ptr,
-    target_rank, target_shape, (float*) na_c->ptr );
+    rank, signal_shape, (float *)na_get_pointer_for_read(signal_value),
+    rank, kernel_shape, (float *)na_get_pointer_for_read(kernel_value),
+    rank, result_shape, (float *)na_get_pointer_for_write(result_value)
+  );
 
-  return val_c;
+  return result_value;
 }
 
 void Init_convolver(void) {
-  Convolver = rb_define_module( "Convolver" );
-  rb_define_singleton_method( Convolver, "convolve_basic", narray_convolve, 2 );
-
-  // private method
-  rb_define_singleton_method( Convolver, "fit_kernel_backwards", narray_fit_backwards, 2 );
+  mConvolver = rb_define_module("Convolver");
+  rb_define_singleton_method(mConvolver, "convolve_basic", convolver_convolve_basic, 2);
 }

@@ -15,8 +15,6 @@
 #else
 #define CONVOLVER_USE_SSE 0
 #endif
-#include "narray_shared.h"
-
 #define LARGEST_RANK 16
 
 void convolve_raw(

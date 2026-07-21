@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
 module Convolver
-  VERSION = '0.4.0'
+  # Current gem version.
+  VERSION = '1.0.0'
 end

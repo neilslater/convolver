@@ -3,7 +3,7 @@
 require 'helpers'
 
 describe Convolver do
-  describe '#convolve_basic' do
+  describe '.convolve_basic' do
     it 'works like the example in the README' do
       a = NArray[0.3, 0.4, 0.5]
       b = NArray[1.3, -0.5]
@@ -88,7 +88,27 @@ describe Convolver do
 
     it 'rejects arrays with different ranks' do
       expect { described_class.convolve_basic(NArray.sfloat(2), NArray.sfloat(2, 2)) }
-        .to raise_error(ArgumentError, 'narray a must have equal rank to narray b (a rank 1, b rank 2)')
+        .to raise_error(ArgumentError, 'signal and kernel must have equal rank')
+    end
+
+    it 'rejects a signal that is not a Numo array' do
+      expect { described_class.convolve_basic([1.0], NArray[1.0]) }
+        .to raise_error(ArgumentError, 'signal and kernel must be Numo::NArray values')
+    end
+
+    it 'rejects a kernel that is not a Numo array' do
+      expect { described_class.convolve_basic(NArray[1.0], [1.0]) }
+        .to raise_error(ArgumentError, 'signal and kernel must be Numo::NArray values')
+    end
+
+    it 'rejects an empty signal' do
+      expect { described_class.convolve_basic(NArray.zeros(0), NArray[1.0]) }
+        .to raise_error(ArgumentError, 'signal and kernel must not be empty')
+    end
+
+    it 'rejects an empty kernel' do
+      expect { described_class.convolve_basic(NArray[1.0], NArray.zeros(0)) }
+        .to raise_error(ArgumentError, 'signal and kernel must not be empty')
     end
 
     it 'rejects arrays above the maximum supported rank' do
@@ -96,12 +116,12 @@ describe Convolver do
       rank_17_array = NArray.sfloat(*rank_17_shape)
 
       expect { described_class.convolve_basic(rank_17_array, rank_17_array) }
-        .to raise_error(ArgumentError, 'exceeded maximum narray rank for convolve of 16')
+        .to raise_error(ArgumentError, 'maximum supported rank is 16')
     end
 
     it 'rejects a kernel larger than the signal' do
       expect { described_class.convolve_basic(NArray.sfloat(2), NArray.sfloat(3)) }
-        .to raise_error(ArgumentError, 'narray b is bigger in one or more dimensions than narray a')
+        .to raise_error(ArgumentError, 'kernel must not be larger than signal in any dimension')
     end
   end
 end
