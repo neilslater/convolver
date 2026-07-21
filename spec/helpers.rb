@@ -3,7 +3,9 @@
 # convolver/spec/helpers.rb
 unless ENV['CONVOLVER_DISABLE_SIMPLECOV']
   require 'simplecov'
-  SimpleCov.start
+  SimpleCov.start do
+    enable_coverage :branch
+  end
 end
 
 require 'convolver'
