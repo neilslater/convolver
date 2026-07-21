@@ -91,6 +91,26 @@ describe Convolver do
         .to raise_error(ArgumentError, 'signal and kernel must have equal rank')
     end
 
+    it 'rejects a signal that is not a Numo array' do
+      expect { described_class.convolve_basic([1.0], NArray[1.0]) }
+        .to raise_error(ArgumentError, 'signal and kernel must be Numo::NArray values')
+    end
+
+    it 'rejects a kernel that is not a Numo array' do
+      expect { described_class.convolve_basic(NArray[1.0], [1.0]) }
+        .to raise_error(ArgumentError, 'signal and kernel must be Numo::NArray values')
+    end
+
+    it 'rejects an empty signal' do
+      expect { described_class.convolve_basic(NArray.zeros(0), NArray[1.0]) }
+        .to raise_error(ArgumentError, 'signal and kernel must not be empty')
+    end
+
+    it 'rejects an empty kernel' do
+      expect { described_class.convolve_basic(NArray[1.0], NArray.zeros(0)) }
+        .to raise_error(ArgumentError, 'signal and kernel must not be empty')
+    end
+
     it 'rejects arrays above the maximum supported rank' do
       rank_17_shape = Array.new(17, 1)
       rank_17_array = NArray.sfloat(*rank_17_shape)
