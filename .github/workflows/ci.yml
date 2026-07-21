@@ -29,9 +29,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install FFTW
-        run: sudo apt-get update && sudo apt-get install --yes libfftw3-dev
-
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -65,7 +62,7 @@ jobs:
       - name: Install native dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes gcovr libfftw3-dev
+          sudo apt-get install --yes gcovr
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1

@@ -54,7 +54,7 @@ namespace :c do
        'coverage/c/summary.txt', '--print-summary'
   end
 
-  desc 'Run the Ruby specs with AddressSanitizer and UBSan (Linux recommended)'
+  desc 'Run the Ruby specs with AddressSanitizer and UBSan (requires Linux and GCC)'
   task :sanitize do
     cc = RbConfig::CONFIG.fetch('CC')
     compiler_version = Open3.capture2e(*Shellwords.split(cc), '--version').first

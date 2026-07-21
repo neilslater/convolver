@@ -1,36 +1,30 @@
 # frozen_string_literal: true
 
-# ext/convolver/extconf.rb
 require 'mkmf'
-require 'rubygems'
+require 'numo/narray/alt'
 
-# Following code stolen shamelessly from fftw3 gem:
-narray_dir = begin
-  File.dirname(Gem.find_files('narray.h').first)
-rescue StandardError
-  $sitearchdir
-end
-if /cygwin|mingw/ =~ RUBY_PLATFORM
-  dir_config('narray', narray_dir, "#{narray_dir}/src")
-else
-  dir_config('narray', narray_dir, narray_dir)
+$LOAD_PATH.each do |load_path|
+  next unless File.exist?(File.join(load_path, 'numo/numo/narray.h'))
+
+  $INCFLAGS = "-I#{File.join(load_path, 'numo')} #{$INCFLAGS}"
+  break
 end
 
-unless have_header('narray.h') && have_header('narray_config.h')
-  print <<-ERROR_MESSAGE
-   ** configure error **
-   Header narray.h or narray_config.h is not found. If you have these files in
-   /narraydir/include, try the following:
+abort 'numo/narray.h not found' unless have_header('numo/narray.h')
 
-   % ruby extconf.rb --with-narray-include=/narraydir/include
+if RUBY_PLATFORM.match?(/mswin|cygwin|mingw/)
+  $LOAD_PATH.each do |load_path|
+    next unless File.exist?(File.join(load_path, 'numo/narray/libnarray.a'))
 
-  ERROR_MESSAGE
-  exit(-1)
+    $LDFLAGS = "-L#{File.join(load_path, 'numo/narray')} #{$LDFLAGS}"
+    break
+  end
+  abort 'libnarray.a not found' unless have_library('narray', 'nary_new')
 end
 
-# This also stolen from fftw3 gem (and not confirmed for Windows platforms - please let me know if it works!)
-if /cygwin|mingw/ =~ RUBY_PLATFORM
-  have_library('narray') || raise('ERROR: narray library is not found')
+if RUBY_PLATFORM.include?('darwin') && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1') &&
+   try_link('int main(void) { return 0; }', '-Wl,-undefined,dynamic_lookup')
+  $LDFLAGS << ' -Wl,-undefined,dynamic_lookup'
 end
 
 case ENV.fetch('CONVOLVER_NATIVE_MODE', 'release')
@@ -38,11 +32,6 @@ when 'release'
   $CFLAGS << ' -O3 -funroll-loops'
 when 'lint'
   $CFLAGS << ' -std=gnu2x -O0 -g -Wall -Wextra -Wpedantic -Wformat=2 -Werror'
-  # narray 0.6 owns the wrapped objects and exposes them through the legacy
-  # Data_Get_Struct API, so Convolver cannot migrate those accesses to TypedData.
-  $CFLAGS << ' -DRUBY_UNTYPED_DATA_WARNING=0'
-  # Ruby 3.4 headers intentionally use compatibility declarations that recent
-  # Clang diagnoses under -Wpedantic. Keep those from obscuring extension warnings.
   if RbConfig::CONFIG.fetch('CC').match?(/clang/) || RbConfig::CONFIG.fetch('host_os').match?(/darwin/)
     $CFLAGS << ' -Wno-c23-extensions -Wno-strict-prototypes -Wno-unused-parameter'
     $CFLAGS << ' -Wno-default-const-init-field-unsafe'

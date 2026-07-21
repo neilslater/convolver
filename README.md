@@ -1,96 +1,99 @@
 # Convolver
 
-[![Gem Version](https://badge.fury.io/rb/convolver.png)](http://badge.fury.io/rb/convolver)
-[![Code Climate](https://codeclimate.com/github/neilslater/convolver.png)](https://codeclimate.com/github/neilslater/convolver)
+[![Gem Version](https://badge.fury.io/rb/convolver.svg)](https://badge.fury.io/rb/convolver)
 
-Calculates discrete convolution between two multi-dimensional arrays of floats.
-See http://en.wikipedia.org/wiki/Convolution
+Convolver calculates valid cross-correlations between multidimensional
+[`Numo::NArray`](https://github.com/yoshoku/numo-narray-alt) values. It chooses
+between a direct native implementation for smaller inputs and a
+[`Numo::Pocketfft`](https://github.com/yoshoku/numo-pocketfft)-based
+implementation for larger inputs.
+
+Version 1.0 replaces the unmaintained `narray` and `fftw3` gems with
+`numo-narray-alt` and `numo-pocketfft`.
 
 ## Installation
 
-### Dependency: FFTW3
+Add Convolver to your application's Gemfile:
 
-Before you install *convolver*, you should install the FFTW3 library on your system.
-See http://www.fftw.org/ for details.
+```ruby
+gem 'convolver'
+```
 
-On macOS with Homebrew, the `fftw3` Ruby gem needs to be told where Homebrew
-installed the headers and libraries:
+Then run:
 
-    brew install fftw
-    bundle config set --local build.fftw3 "--with-fftw3-dir=$(brew --prefix fftw)"
-    bundle install
+```sh
+bundle install
+```
 
-The local Bundler setting is written to `.bundle/config`, which is intentionally
-not committed because the Homebrew prefix depends on the machine.
+Alternatively, install it directly:
 
-### Known warning with Ruby 3.4
+```sh
+gem install convolver
+```
 
-The first use of `NArray` may emit this warning:
-
-    warning: undefining the allocator of T_DATA class NArray
-
-This comes from the legacy native allocation API used by `narray` 0.6.1.2. Ruby
-disables the inherited allocator when the first native NArray object is created.
-The warning does not affect convolver's results; removing it properly requires a
-fix in `narray` or a future migration to a maintained NArray implementation.
-
-### Installing the gem
-
-Add this line to your application's Gemfile:
-
-    gem 'convolver'
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install convolver
+No external FFT library is required; PocketFFT is bundled by its Ruby gem.
 
 ## Usage
 
-Basic convolution:
+```ruby
+require 'convolver'
 
-    a = NArray[0.3,0.4,0.5]
-    b = NArray[1.3, -0.5]
-    c = Convolver.convolve( a, b )
-    => NArray.float(2): [ 0.19, 0.27 ]
+signal = Numo::SFloat[0.3, 0.4, 0.5]
+kernel = Numo::SFloat[1.3, -0.5]
 
- * Convolver only works on single-precision floats internally. It will cast NArray types to this, if
-possible, prior to calculating. For best speed, use NArray.sfloat arrays.
+Convolver.convolve(signal, kernel)
+# => Numo::SFloat#shape=[2]
+#    [0.19, 0.27]
+```
 
- * The output is smaller than the input, it only contains fully-calculated values. The output size
-is the original size, minus the kernel size, plus 1, in each dimension.
+The signal and kernel must have the same rank, and the kernel must be no larger
+than the signal in any dimension. Convolver returns only positions at which the
+kernel overlaps the signal completely. The result size in each dimension is:
 
- * Convolver expects input a and kernel b to have the same rank, and for the kernel to be same size
-or smaller in all dimensions as the input.
+```ruby
+signal_size - kernel_size + 1
+```
 
- * Convolver.convolve will try to choose the faster of two approaches it has coded. In general,
-small convolutions are processed directly by multiplying out all combinations and summing them,
-and large convolutions are processed using FFTW3 to convert to frequency space where convolution
-is simpler and faster to calculate, then convert back.
+Inputs are converted to single-precision floats internally, and results are
+returned as `Numo::SFloat`. Supplying `Numo::SFloat` inputs avoids conversion in
+the direct implementation.
+
+`Convolver.convolve` normally chooses the implementation automatically. The
+implementations can also be called directly for application-specific
+benchmarking:
+
+```ruby
+Convolver.convolve_basic(signal, kernel)
+Convolver.convolve_fft(signal, kernel)
+```
+
+`Convolver.convolve_fftw3` remains as a deprecated alias for `convolve_fft` to
+ease migration from Convolver 0.x.
 
 ## Contributing
 
-The Ruby specs also exercise the native extension. Native-code quality checks are available as
-separate Rake tasks:
+Install the development dependencies, then run the main suite:
 
-    bundle exec rake c:lint
-    bundle exec rake c:coverage  # GCC and gcovr required
-    bundle exec rake c:sanitize
+```sh
+bundle install
+bundle exec rake
+bundle exec rubocop
+bundle exec rake c:lint
+```
 
-`c:coverage` writes an HTML report to `coverage/c/index.html` and Cobertura XML to
-`coverage/c/cobertura.xml`. The pull-request workflow uploads these reports as a `c-coverage`
-artifact and includes the text summary in the job summary. `c:sanitize` rebuilds the extension with
-AddressSanitizer and UBSan and currently requires Linux and GCC.
+The Ruby specs exercise both the Ruby API and native extension. Additional
+native-code checks are available:
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+```sh
+bundle exec rake c:coverage  # Requires GCC and gcovr
+bundle exec rake c:sanitize  # Requires Linux and GCC
+```
+
+`c:coverage` writes HTML and Cobertura reports under `coverage/c`. CI uploads
+the reports as a `c-coverage` artifact. The sanitizer task uses AddressSanitizer
+and UndefinedBehaviorSanitizer.
 
 ## Contributors
 
- * [Dima Ermilov](https://github.com/adworse) contributed fix to support compiling under Windows.
+- [Dima Ermilov](https://github.com/adworse) contributed the original Windows
+  compilation support.

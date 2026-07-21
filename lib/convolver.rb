@@ -1,102 +1,109 @@
 # frozen_string_literal: true
 
-require 'narray'
+require 'numo/narray/alt'
+require 'numo/pocketfft'
 require 'convolver/convolver'
 require 'convolver/version'
-require 'fftw3'
 
-# Convolution operations for NArray values.
+# Valid cross-correlation operations for Numo::NArray values.
 module Convolver
-  # Chooses and calls likely fastest method from #convolve_basic and #convolve_fftw3.
-  # The two parameters must have the same rank. The output has same rank, its size in each
-  # dimension d is given by
-  #  signal.shape[d] - kernel.shape[d] + 1
-  # If you always perform convolutions of the same size, you may be better off benchmarking your
-  # own code using either #convolve_basic or #convolve_fftw3, and have your code use the fastest.
-  # @param [NArray] signal must be same size or larger than kernel in each dimension
-  # @param [NArray] kernel must be same size or smaller than signal in each dimension
-  # @return [NArray] result of convolving signal with kernel
-  def self.convolve(signal, kernel)
-    # For small signals or kernels, just go straight to basic
-    return convolve_basic(signal, kernel) if signal.size < 1000 || kernel.size < 100
+  # Maximum number of dimensions supported by the direct native implementation.
+  MAX_RANK = 16
 
-    # If predicted time is less than a millisecond, just do a basic convolve
-    basic_time_predicted = predict_convolve_basic_time(signal, kernel)
-    return convolve_basic(signal, kernel) if basic_time_predicted < 0.1
+  class << self
+    # Chooses the likely fastest implementation for a valid cross-correlation.
+    #
+    # The inputs must have the same rank, and the kernel must not be larger than
+    # the signal in any dimension. The result shape is:
+    #
+    #   signal.shape.zip(kernel.shape).map { |signal_size, kernel_size| signal_size - kernel_size + 1 }
+    #
+    # @param signal [Numo::NArray] input values
+    # @param kernel [Numo::NArray] correlation kernel
+    # @return [Numo::SFloat] valid cross-correlation result
+    # @raise [ArgumentError] if the inputs have incompatible ranks or shapes
+    def convolve(signal, kernel)
+      validate_inputs!(signal, kernel)
+      return convolve_basic(signal, kernel) if signal.size < 1000 || kernel.size < 100
 
-    # Factor of two to allow for large uncertainty in predictions for FFTW3
-    fft_time_predicted = predict_convolve_fft_time(signal, kernel)
-    return convolve_fftw3(signal, kernel) if fft_time_predicted < 2 * basic_time_predicted
+      basic_time_predicted = predict_convolve_basic_time(signal, kernel)
+      return convolve_basic(signal, kernel) if basic_time_predicted < 0.1
 
-    convolve_basic(signal, kernel)
-  end
+      fft_time_predicted = predict_convolve_fft_time(signal, kernel)
+      return convolve_fft(signal, kernel) if fft_time_predicted < 2 * basic_time_predicted
 
-  # Uses FFTW3 library to calculate convolution of an array of floats representing a signal,
-  # with a second array representing a kernel. The two parameters must have the same rank.
-  # The output has same rank, its size in each dimension d is given by
-  #  signal.shape[d] - kernel.shape[d] + 1
-  # @param [NArray] signal must be same size or larger than kernel in each dimension
-  # @param [NArray] kernel must be same size or smaller than signal in each dimension
-  # @return [NArray] result of convolving signal with kernel
-  def self.convolve_fftw3(signal, kernel)
-    combined_shape, shift_by, ranges = fft_offsets(signal.shape, kernel.shape)
-    mod_a, mod_b = fft_inputs(signal, kernel, combined_shape, shift_by)
-    cfreqs = FFTW3.fft(mod_a) * FFTW3.fft(mod_b)
-
-    (FFTW3.ifft(cfreqs).real * (1.0 / mod_a.size))[*ranges]
-  end
-
-  # A rough estimate of time that #convolve_fftw3 will take, based on complexity
-  # of its operations, and some rough benchmarking. A value of 1.0 corresponds to results
-  # varying between 1 and 12 milliseconds on the test computer.
-  # @param [NArray] signal must be same size or larger than kernel in each dimension
-  # @param [NArray] kernel must be same size or smaller than signal in each dimension
-  # @return [Float] rough estimate of time for convolution compared to baseline
-  def self.predict_convolve_fft_time(signal, kernel)
-    16 * 4.55e-08 * result_shape(signal.shape, kernel.shape).inject(1) { |t, x| t * x * Math.log(x) }
-  end
-
-  # A rough estimate of time that #convolve will take, based on complexity
-  # of its operations, and some rough benchmarking. A value of 1.0 corresponds to results
-  # varying bewteen 2 and 8 milliseconds on the test computer.
-  # @param [NArray] signal must be same size or larger than kernel in each dimension
-  # @param [NArray] kernel must be same size or smaller than signal in each dimension
-  # @return [Float] rough estimate of time for convolution compared to baseline
-  def self.predict_convolve_basic_time(signal, kernel)
-    outputs = shape_to_size(result_shape(signal.shape, kernel.shape))
-    4.54e-12 * (outputs * shape_to_size(signal.shape) * shape_to_size(kernel.shape))
-  end
-
-  def self.shape_to_size(shape)
-    shape.inject(1) { |t, x| t * x }
-  end
-
-  def self.result_shape(signal_shape, kernel_shape)
-    result_shape = []
-    signal_shape.each_with_index do |signal_size, i|
-      kernel_size = kernel_shape[i]
-      result_shape[i] = signal_size - kernel_size + 1
+      convolve_basic(signal, kernel)
     end
-    result_shape
-  end
 
-  def self.fft_offsets(signal_shape, kernel_shape)
-    signal_shape.zip(kernel_shape).map { |sizes| fft_offset(*sizes) }.transpose
-  end
+    # Uses PocketFFT to calculate a valid cross-correlation.
+    #
+    # @param signal [Numo::NArray] input values
+    # @param kernel [Numo::NArray] correlation kernel
+    # @return [Numo::SFloat] valid cross-correlation result
+    # @raise [ArgumentError] if the inputs have incompatible ranks or shapes
+    def convolve_fft(signal, kernel)
+      validate_inputs!(signal, kernel)
+      ranges = kernel.shape.zip(signal.shape).map { |kernel_size, signal_size| (kernel_size - 1)...signal_size }
+      full_convolution = Numo::Pocketfft.fftconvolve(signal, kernel.reverse)
 
-  def self.fft_inputs(signal, kernel, combined_shape, shift_by)
-    signal_input = NArray.sfloat(*combined_shape)
-    signal_input[*shift_by] = signal
-    kernel_input = NArray.sfloat(*combined_shape)
-    fit_kernel_backwards(kernel_input, kernel)
-    [signal_input, kernel_input]
-  end
+      Numo::SFloat.cast(full_convolution[*ranges])
+    end
 
-  def self.fft_offset(signal_size, kernel_size)
-    output_offset = kernel_size - 1
-    output_size = signal_size - kernel_size + 1
-    [signal_size + kernel_size - 1, kernel_size / 2, output_offset...(output_offset + output_size)]
-  end
+    # Compatibility alias for the former FFTW3-backed implementation.
+    #
+    # @deprecated Use {.convolve_fft}; Convolver no longer uses FFTW3.
+    # @return [Numo::SFloat] valid cross-correlation result
+    def convolve_fftw3(signal, kernel)
+      warn 'Convolver.convolve_fftw3 is deprecated; use .convolve_fft instead', uplevel: 1
+      convolve_fft(signal, kernel)
+    end
 
-  private_class_method :fit_kernel_backwards
+    # Estimates the relative cost of {.convolve_fft}.
+    #
+    # @param signal [Numo::NArray] input values
+    # @param kernel [Numo::NArray] correlation kernel
+    # @return [Float] machine-specific relative cost estimate
+    def predict_convolve_fft_time(signal, kernel)
+      validate_inputs!(signal, kernel)
+      output_size = result_shape(signal.shape, kernel.shape).inject(:*)
+      16 * 4.55e-08 * output_size * Math.log(output_size)
+    end
+
+    # Estimates the relative cost of {.convolve_basic}.
+    #
+    # @param signal [Numo::NArray] input values
+    # @param kernel [Numo::NArray] correlation kernel
+    # @return [Float] machine-specific relative cost estimate
+    def predict_convolve_basic_time(signal, kernel)
+      validate_inputs!(signal, kernel)
+      outputs = result_shape(signal.shape, kernel.shape).inject(:*)
+      4.54e-12 * (outputs * signal.size * kernel.size)
+    end
+
+    private
+
+    def result_shape(signal_shape, kernel_shape)
+      signal_shape.zip(kernel_shape).map { |signal_size, kernel_size| signal_size - kernel_size + 1 }
+    end
+
+    def validate_inputs!(signal, kernel)
+      validate_types!(signal, kernel)
+      validate_shapes!(signal, kernel)
+    end
+
+    def validate_types!(signal, kernel)
+      unless signal.is_a?(Numo::NArray) && kernel.is_a?(Numo::NArray)
+        raise ArgumentError, 'signal and kernel must be Numo::NArray values'
+      end
+      raise ArgumentError, 'signal and kernel must not be empty' if signal.empty? || kernel.empty?
+    end
+
+    def validate_shapes!(signal, kernel)
+      raise ArgumentError, 'signal and kernel must have equal rank' unless signal.ndim == kernel.ndim
+      raise ArgumentError, "maximum supported rank is #{MAX_RANK}" if signal.ndim > MAX_RANK
+      return if signal.shape.zip(kernel.shape).all? { |signal_size, kernel_size| signal_size >= kernel_size }
+
+      raise ArgumentError, 'kernel must not be larger than signal in any dimension'
+    end
+  end
 end
