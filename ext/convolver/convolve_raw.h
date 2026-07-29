@@ -18,8 +18,8 @@
 #define LARGEST_RANK 16
 
 void convolve_raw(
-    int in_rank, int *in_shape, float *in_ptr,
-    int kernel_rank, int *kernel_shape, float *kernel_ptr,
-    int out_rank, int *out_shape, float *out_ptr );
+    int in_rank, const size_t *in_shape, const float *in_ptr,
+    int kernel_rank, const size_t *kernel_shape, const float *kernel_ptr,
+    int out_rank, const size_t *out_shape, float *out_ptr );
 
 #endif
