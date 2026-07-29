@@ -47,6 +47,12 @@ static VALUE convolver_convolve_basic(VALUE self, VALUE signal, VALUE kernel) {
 
   signal_value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, signal);
   kernel_value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, kernel);
+  if (!RTEST(na_check_contiguous(signal_value))) {
+    signal_value = na_copy(signal_value);
+  }
+  if (!RTEST(na_check_contiguous(kernel_value))) {
+    kernel_value = na_copy(kernel_value);
+  }
   GetNArray(signal_value, signal_narray);
   GetNArray(kernel_value, kernel_narray);
 

@@ -28,6 +28,15 @@ describe Convolver do
                                           [1.13, 1.3, 0.83], [1.04, 0.26, 0.77], [1.06, 1.05, 1.04] ]
     end
 
+    it 'calculates a convolution from non-contiguous views' do
+      signal = NArray[[0.3, 0.6, 0.9], [0.4, 0.8, 1.0], [0.5, 0.2, 0.1]].transpose
+      kernel = NArray[[1.2, 0.5], [-0.5, -1.3]].transpose
+
+      result = described_class.convolve_basic(signal, kernel)
+
+      expect(result).to be_narray_like NArray[[-0.58, 0.37], [-0.53, 1.23]]
+    end
+
     it 'calculates a 3D convolution' do
       # 5x4x3
       a = NArray[
