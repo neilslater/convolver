@@ -50,7 +50,7 @@ void convolve_raw(
     int kernel_rank, int *kernel_shape, float *kernel_ptr,
     int out_rank, int *out_shape, float *out_ptr ) {
   int i, j, kernel_size, kernel_aligned, out_size, offset;
-  int out_co_incr[LARGEST_RANK], kernel_co_incr[LARGEST_RANK];
+  int out_co_incr[LARGEST_RANK + 1], kernel_co_incr[LARGEST_RANK + 1];
   int ker_q[LARGEST_RANK], out_q[LARGEST_RANK];
   int *kernel_co_incr_cache;
 

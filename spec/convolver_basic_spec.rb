@@ -128,6 +128,16 @@ describe Convolver do
         .to raise_error(ArgumentError, 'maximum supported rank is 16')
     end
 
+    it 'calculates a convolution at the maximum supported rank' do
+      rank_16_shape = Array.new(16, 1)
+      signal = NArray.ones(*rank_16_shape) * 2
+      kernel = NArray.ones(*rank_16_shape) * 3
+
+      result = described_class.convolve_basic(signal, kernel)
+
+      expect(result).to be_narray_like NArray.ones(*rank_16_shape) * 6
+    end
+
     it 'rejects a kernel larger than the signal' do
       expect { described_class.convolve_basic(NArray.sfloat(2), NArray.sfloat(3)) }
         .to raise_error(ArgumentError, 'kernel must not be larger than signal in any dimension')
