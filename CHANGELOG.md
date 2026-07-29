@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-07-29
+
+### Fixed
+
+- Made the direct native implementation handle non-contiguous Numo::NArray
+  views safely.
+- Prevented an out-of-bounds native buffer write for rank-16 inputs.
+- Replaced unchecked native size and offset arithmetic with overflow-checked
+  calculations.
+
 ## [1.0.0] - 2026-07-21
 
 ### Added
@@ -44,4 +54,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the native extension to use the maintained Numo C API and removed the
   legacy untyped-data compatibility code.
 
+[1.0.1]: https://github.com/neilslater/convolver/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/neilslater/convolver/compare/v0.3.2...v1.0.0
