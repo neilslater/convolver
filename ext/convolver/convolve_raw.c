@@ -2,22 +2,37 @@
 
 #include "convolve_raw.h"
 
-static inline int size_from_shape( int rank, int *shape ) {
-  int size = 1;
+static inline size_t checked_add( size_t left, size_t right, const char *description ) {
+  if ( right > SIZE_MAX - left ) {
+    rb_raise( rb_eRangeError, "%s exceeds native implementation limit", description );
+  }
+  return left + right;
+}
+
+static inline size_t checked_multiply( size_t left, size_t right, const char *description ) {
+  if ( left != 0 && right > SIZE_MAX / left ) {
+    rb_raise( rb_eRangeError, "%s exceeds native implementation limit", description );
+  }
+  return left * right;
+}
+
+static inline size_t size_from_shape( int rank, const size_t *shape, const char *description ) {
+  size_t size = 1;
   int i;
-  for ( i = 0; i < rank; i++ ) { size *= shape[i]; }
+  for ( i = 0; i < rank; i++ ) {
+    size = checked_multiply( size, shape[i], description );
+  }
   return size;
 }
 
 // Sets reverse indices
-static inline void corner_reset( int rank, int *shape, int *rev_indices ) {
+static inline void corner_reset( int rank, const size_t *shape, size_t *rev_indices ) {
   int i;
   for ( i = 0; i < rank; i++ ) { rev_indices[i] = shape[i] - 1; }
-  return;
 }
 
 // Counts indices down, returns number of ranks that reset
-static inline int corner_dec( int rank, int *shape, int *rev_indices ) {
+static inline int corner_dec( int rank, const size_t *shape, size_t *rev_indices ) {
   int i = 0;
   (void) rank;
   while ( ! rev_indices[i]-- ) {
@@ -28,14 +43,29 @@ static inline int corner_dec( int rank, int *shape, int *rev_indices ) {
 }
 
 // Generates co-increment steps by rank boundaries crossed, for the outer position as inner position is incremented by 1
-static inline void calc_co_increment( int rank, int *outer_shape, int *inner_shape, int *co_increment ) {
-  int i, factor;
+static inline void calc_co_increment(
+    int rank, const size_t *outer_shape, const size_t *inner_shape, size_t *co_increment ) {
+  size_t factor = 1;
+  int i;
   co_increment[0] = 1; // co-increment is always 1 in lowest rank
-  factor = 1;
   for ( i = 0; i < rank; i++ ) {
-    co_increment[i+1] = co_increment[i] + factor * ( outer_shape[i] - inner_shape[i] );
-    factor *= outer_shape[i];
+    size_t skipped = checked_multiply( factor, outer_shape[i] - inner_shape[i], "array offset" );
+    co_increment[i+1] = checked_add( co_increment[i], skipped, "array offset" );
+    factor = checked_multiply( factor, outer_shape[i], "array size" );
   }
+}
+
+static inline size_t maximum_offset(
+    int rank, const size_t *outer_shape, const size_t *inner_shape, const char *description ) {
+  size_t factor = 1;
+  size_t offset = 0;
+  int i;
+  for ( i = 0; i < rank; i++ ) {
+    size_t dimension_offset = checked_multiply( factor, inner_shape[i] - 1, description );
+    offset = checked_add( offset, dimension_offset, description );
+    factor = checked_multiply( factor, outer_shape[i], "array size" );
+  }
+  return offset;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,33 +76,46 @@ static inline void calc_co_increment( int rank, int *outer_shape, int *inner_sha
 //
 
 void convolve_raw(
-    int in_rank, int *in_shape, float *in_ptr,
-    int kernel_rank, int *kernel_shape, float *kernel_ptr,
-    int out_rank, int *out_shape, float *out_ptr ) {
-  int i, j, kernel_size, kernel_aligned, out_size, offset;
-  int out_co_incr[LARGEST_RANK + 1], kernel_co_incr[LARGEST_RANK + 1];
-  int ker_q[LARGEST_RANK], out_q[LARGEST_RANK];
-  int *kernel_co_incr_cache;
+    int in_rank, const size_t *in_shape, const float *in_ptr,
+    int kernel_rank, const size_t *kernel_shape, const float *kernel_ptr,
+    int out_rank, const size_t *out_shape, float *out_ptr ) {
+  size_t i, j, input_size, kernel_size, kernel_aligned, out_size, offset;
+  size_t maximum_input_offset;
+  size_t out_co_incr[LARGEST_RANK + 1], kernel_co_incr[LARGEST_RANK + 1];
+  size_t ker_q[LARGEST_RANK], out_q[LARGEST_RANK];
+  size_t *kernel_co_incr_cache;
+  VALUE cache_storage = 0;
 
-  kernel_size = size_from_shape( kernel_rank, kernel_shape );
-  kernel_aligned = 4 * (kernel_size/4);
-  out_size = size_from_shape( out_rank, out_shape );
+  kernel_size = size_from_shape( kernel_rank, kernel_shape, "kernel size" );
+  kernel_aligned = kernel_size - kernel_size % 4;
+  out_size = size_from_shape( out_rank, out_shape, "output size" );
+  input_size = size_from_shape( in_rank, in_shape, "input size" );
 
   calc_co_increment( in_rank, in_shape, out_shape, out_co_incr );
   calc_co_increment( in_rank, in_shape, kernel_shape, kernel_co_incr );
+  maximum_input_offset = checked_add(
+    maximum_offset( in_rank, in_shape, out_shape, "input offset" ),
+    maximum_offset( in_rank, in_shape, kernel_shape, "input offset" ),
+    "input offset"
+  );
+  if ( maximum_input_offset >= input_size ) {
+    rb_raise( rb_eRangeError, "input offset exceeds native implementation limit" );
+  }
 
-  kernel_co_incr_cache = ALLOC_N( int, kernel_size );
+  kernel_co_incr_cache = RB_ALLOCV_N( size_t, cache_storage, kernel_size );
   kernel_co_incr_cache[0] = 0;
 
   corner_reset( kernel_rank, kernel_shape, ker_q );
   for ( i = 1; i < kernel_size; i++ ) {
-    kernel_co_incr_cache[i] = kernel_co_incr_cache[i-1] + kernel_co_incr[ corner_dec( kernel_rank, kernel_shape, ker_q  ) ];
+    kernel_co_incr_cache[i] = checked_add(
+      kernel_co_incr_cache[i-1],
+      kernel_co_incr[ corner_dec( kernel_rank, kernel_shape, ker_q ) ],
+      "kernel offset"
+    );
   }
 
-  // For convenience of flow, we set offset to -1 and adjust countdown 1 higher to compensate
-  offset = -1;
+  offset = 0;
   corner_reset( out_rank, out_shape, out_q );
-  out_q[0]++;
 
   // Main convolve loop
   for ( i = 0; i < out_size; i++ ) {
@@ -82,8 +125,6 @@ void convolve_raw(
     simd_t = _mm_setzero_ps();
 #endif
     float t = 0.0;
-
-    offset += out_co_incr[ corner_dec( out_rank, out_shape, out_q ) ];
 
 #if CONVOLVER_USE_SSE
     // Use SIMD for all the aligned values in groups of 4
@@ -114,8 +155,15 @@ void convolve_raw(
 #else
     out_ptr[i] = t;
 #endif
+
+    if ( i + 1 < out_size ) {
+      offset = checked_add(
+        offset,
+        out_co_incr[ corner_dec( out_rank, out_shape, out_q ) ],
+        "input offset"
+      );
+    }
   }
 
-  xfree( kernel_co_incr_cache );
-  return;
+  RB_ALLOCV_END( cache_storage );
 }

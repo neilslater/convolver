@@ -1,4 +1,3 @@
-#include <limits.h>
 #include <ruby.h>
 #include <numo/narray.h>
 #include <numo/intern.h>
@@ -7,14 +6,11 @@
 
 static VALUE mConvolver;
 
-static void copy_shape(int rank, const size_t *source, int *target) {
+static void copy_shape(int rank, const size_t *source, size_t *target) {
   int i;
 
   for (i = 0; i < rank; i++) {
-    if (source[rank - i - 1] > INT_MAX) {
-      rb_raise(rb_eArgError, "array dimension exceeds native implementation limit");
-    }
-    target[i] = (int)source[rank - i - 1];
+    target[i] = source[rank - i - 1];
   }
 }
 
@@ -34,9 +30,9 @@ static VALUE convolver_convolve_basic(VALUE self, VALUE signal, VALUE kernel) {
   narray_t *kernel_narray;
   int rank;
   int i;
-  int signal_shape[LARGEST_RANK];
-  int kernel_shape[LARGEST_RANK];
-  int result_shape[LARGEST_RANK];
+  size_t signal_shape[LARGEST_RANK];
+  size_t kernel_shape[LARGEST_RANK];
+  size_t result_shape[LARGEST_RANK];
   size_t numo_result_shape[LARGEST_RANK];
 
   (void)self;
@@ -72,10 +68,10 @@ static VALUE convolver_convolve_basic(VALUE self, VALUE signal, VALUE kernel) {
   copy_shape(rank, kernel_narray->shape, kernel_shape);
 
   for (i = 0; i < rank; i++) {
-    result_shape[i] = signal_shape[i] - kernel_shape[i] + 1;
-    if (result_shape[i] < 1) {
+    if (signal_shape[i] < kernel_shape[i]) {
       rb_raise(rb_eArgError, "kernel must not be larger than signal in any dimension");
     }
+    result_shape[i] = signal_shape[i] - kernel_shape[i] + 1;
     numo_result_shape[rank - i - 1] = (size_t)result_shape[i];
   }
 
