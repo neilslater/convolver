@@ -1,5 +1,6 @@
 # Convolver
 
+[![CI](https://github.com/neilslater/convolver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/neilslater/convolver/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/convolver.svg)](https://badge.fury.io/rb/convolver)
 
 Convolver calculates valid cross-correlations between multidimensional
