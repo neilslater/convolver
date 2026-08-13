@@ -1,0 +1,69 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "maintenance")'
+    - when: never
+
+stages:
+  - test
+
+.ruby-job:
+  stage: test
+  timeout: 10 minutes
+  cache:
+    key:
+      files:
+        - Gemfile.lock
+      prefix: "ruby-${RUBY_VERSION}"
+    paths:
+      - vendor/bundle
+  before_script:
+    - gem install bundler --no-document
+    - bundle config set --local path vendor/bundle
+    - bundle install --jobs 4 --retry 3
+
+ruby:
+  extends: .ruby-job
+  image: "ruby:${RUBY_VERSION}"
+  parallel:
+    matrix:
+      - RUBY_VERSION:
+          - "3.3"
+          - "3.4"
+          - "4.0"
+  script:
+    - bundle exec rake compile test
+    - bundle exec rubocop
+
+.native-job:
+  extends: .ruby-job
+  image: ruby:3.4
+  variables:
+    RUBY_VERSION: "3.4"
+
+native:lint:
+  extends: .native-job
+  script:
+    - bundle exec rake c:lint
+
+native:coverage:
+  extends: .native-job
+  script:
+    - apt-get update
+    - apt-get install --yes gcovr
+    - bundle exec rake c:coverage
+  artifacts:
+    name: c-coverage
+    expire_in: 14 days
+    paths:
+      - coverage/c
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/c/cobertura.xml
+
+native:sanitize:
+  extends: .native-job
+  script:
+    - bundle exec rake c:sanitize
