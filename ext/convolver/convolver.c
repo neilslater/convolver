@@ -17,12 +17,12 @@ static void copy_shape(int rank, const size_t *source, size_t *target) {
 /*
  * Calculates a valid cross-correlation using the direct native implementation.
  *
- * @overload convolve_basic(signal, kernel)
+ * @overload convolve_basic_valid(signal, kernel)
  *   @param signal [Numo::NArray] input values
  *   @param kernel [Numo::NArray] correlation kernel
  *   @return [Numo::SFloat] valid cross-correlation result
  */
-static VALUE convolver_convolve_basic(VALUE self, VALUE signal, VALUE kernel) {
+static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kernel) {
   volatile VALUE signal_value;
   volatile VALUE kernel_value;
   volatile VALUE result_value;
@@ -87,5 +87,5 @@ static VALUE convolver_convolve_basic(VALUE self, VALUE signal, VALUE kernel) {
 
 void Init_convolver(void) {
   mConvolver = rb_define_module("Convolver");
-  rb_define_singleton_method(mConvolver, "convolve_basic", convolver_convolve_basic, 2);
+  rb_define_singleton_method(mConvolver, "convolve_basic_valid", convolver_convolve_basic_valid, 2);
 }
