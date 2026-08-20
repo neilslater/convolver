@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** Raised the minimum supported Ruby version to 3.3.
 - Made algorithm selection and both public time estimators account for output
   shape, boundary extension, kernel folding, and FFT working shape.
 - Moved the native valid-only calculation behind a shared Ruby orchestration

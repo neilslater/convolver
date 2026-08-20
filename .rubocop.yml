@@ -1,16 +1,6 @@
-plugins:
-  - rubocop-rake
-  - rubocop-rspec
-
-AllCops:
-  NewCops: enable
-
-Style/GlobalVars:
-  Exclude:
-    - ext/convolver/extconf.rb
-
-RSpec/ExampleLength:
-  Max: 30
-
-RSpec/MultipleExpectations:
-  Max: 7
+inherit_gem:
+  ncs_rubocop_conf:
+    - config/base.yml
+    - config/rake.yml
+    - config/rspec.yml
+    - config/native_extension.yml

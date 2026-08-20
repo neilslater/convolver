@@ -13,8 +13,6 @@ module Convolver
   require 'convolver/operation_plan'
 
   class << self
-    # The accepted public API has two positional and four keyword parameters.
-    # rubocop:disable Metrics/ParameterLists
     # Chooses the likely fastest cross-correlation implementation.
     #
     # @param signal [Numo::NArray] input values
@@ -155,7 +153,5 @@ module Convolver
 
       plan.extended_size
     end
-
-    # rubocop:enable Metrics/ParameterLists
   end
 end
