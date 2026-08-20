@@ -43,6 +43,9 @@ jobs:
       - name: Run RuboCop
         run: bundle exec rubocop
 
+      - name: Audit RuboCop exceptions
+        run: bundle exec ncs-rubocop-conf-audit
+
   native-quality:
     name: Native ${{ matrix.check }}
     runs-on: ubuntu-latest

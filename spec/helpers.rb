@@ -21,6 +21,8 @@ end
 
 NArray.alias_method :random, :rand
 
+require 'convolution_fixtures'
+
 # Matcher compares Numo::NArray values numerically.
 RSpec::Matchers.define :be_narray_like do |expected_narray, mse = 1e-9|
   match do |given|

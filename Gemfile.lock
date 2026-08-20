@@ -1,0 +1,95 @@
+GIT
+  remote: https://github.com/neilslater/ncs_rubocop_conf.git
+  revision: 8953c592a3a58b67dfeebac189140fdc5cc5dac9
+  tag: v0.1.0
+  specs:
+    ncs_rubocop_conf (0.1.0)
+      rubocop (~> 1.88.0, >= 1.88.2)
+      rubocop-rake (~> 0.7.0, >= 0.7.1)
+      rubocop-rspec (~> 3.10.0, >= 3.10.2)
+
+PATH
+  remote: .
+  specs:
+    convolver (2.0.0)
+      numo-narray-alt (>= 0.9.9, < 0.11)
+      numo-pocketfft (>= 0.6, < 0.8)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ast (2.4.3)
+    diff-lcs (1.6.2)
+    json (2.21.1)
+    language_server-protocol (3.17.0.6)
+    lint_roller (1.1.0)
+    numo-narray-alt (0.10.5)
+    numo-pocketfft (0.7.0)
+      numo-narray-alt (>= 0.9.9, < 0.12.0)
+    parallel (2.1.0)
+    parser (3.3.12.0)
+      ast (~> 2.4.1)
+      racc
+    prism (1.9.0)
+    racc (1.8.1)
+    rainbow (3.1.1)
+    rake (13.4.2)
+    rake-compiler (1.3.1)
+      rake
+    regexp_parser (2.12.0)
+    rspec (3.13.2)
+      rspec-core (~> 3.13.0)
+      rspec-expectations (~> 3.13.0)
+      rspec-mocks (~> 3.13.0)
+    rspec-core (3.13.6)
+      rspec-support (~> 3.13.0)
+    rspec-expectations (3.13.5)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-mocks (3.13.8)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-support (3.13.7)
+    rubocop (1.88.2)
+      json (~> 2.3)
+      language_server-protocol (~> 3.17.0.2)
+      lint_roller (~> 1.1.0)
+      parallel (>= 1.10)
+      parser (>= 3.3.0.2)
+      rainbow (>= 2.2.2, < 4.0)
+      regexp_parser (>= 2.9.3, < 3.0)
+      rubocop-ast (>= 1.49.0, < 2.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (>= 2.4.0, < 4.0)
+    rubocop-ast (1.50.0)
+      parser (>= 3.3.7.2)
+      prism (~> 1.7)
+    rubocop-rake (0.7.1)
+      lint_roller (~> 1.1)
+      rubocop (>= 1.72.1)
+    rubocop-rspec (3.10.2)
+      lint_roller (~> 1.1)
+      regexp_parser (>= 2.0)
+      rubocop (~> 1.86, >= 1.86.2)
+    ruby-progressbar (1.13.0)
+    simplecov (1.0.2)
+    unicode-display_width (3.2.0)
+      unicode-emoji (~> 4.1)
+    unicode-emoji (4.2.0)
+    yard (0.9.45)
+
+PLATFORMS
+  ruby
+  x86_64-darwin-23
+
+DEPENDENCIES
+  convolver!
+  ncs_rubocop_conf!
+  rake (>= 1.9.1)
+  rake-compiler (>= 0.8.3)
+  rspec (>= 2.13.0)
+  simplecov (>= 0.22)
+  yard (>= 0.8.7.2)
+
+BUNDLED WITH
+  4.0.16

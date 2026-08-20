@@ -31,7 +31,6 @@ rebuild_and_test_native = lambda do |mode, test: true|
   sh({ 'CONVOLVER_NATIVE_MODE' => mode }, RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', *tasks)
 end
 
-# rubocop:disable Metrics/BlockLength
 namespace :c do
   desc 'Compile the C extension with strict warnings'
   task :lint do
@@ -74,4 +73,3 @@ namespace :c do
     sh(sanitizer_env, RbConfig.ruby, '-S', 'bundle', 'exec', 'rake', 'test')
   end
 end
-# rubocop:enable Metrics/BlockLength

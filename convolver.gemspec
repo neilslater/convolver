@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.summary       = 'Fast cross-correlation for Numo::NArray'
   spec.homepage      = 'https://github.com/neilslater/convolver'
   spec.license       = 'MIT'
-  spec.required_ruby_version = '>= 3.2'
+  spec.required_ruby_version = '>= 3.3'
 
   spec.add_dependency 'numo-narray-alt', '>= 0.9.9', '< 0.11'
   spec.add_dependency 'numo-pocketfft', '>= 0.6', '< 0.8'
