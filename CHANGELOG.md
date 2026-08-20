@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-20
+
 ### Added
 
 - Added `:valid`, `:same`, and `:full` output modes to every calculation and
@@ -22,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking:** Raised the minimum supported Ruby version to 3.3.
+- Adopted `ncs_rubocop_conf` 0.1.0 as the versioned RuboCop policy, added
+  exception auditing, and began tracking the development dependency lockfile.
 - Made algorithm selection and both public time estimators account for output
   shape, boundary extension, kernel folding, and FFT working shape.
 - Moved the native valid-only calculation behind a shared Ruby orchestration
@@ -77,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the native extension to use the maintained Numo C API and removed the
   legacy untyped-data compatibility code.
 
-[Unreleased]: https://github.com/neilslater/convolver/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/neilslater/convolver/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/neilslater/convolver/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/neilslater/convolver/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/neilslater/convolver/compare/v0.3.2...v1.0.0
