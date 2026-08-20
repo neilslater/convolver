@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.version       = Convolver::VERSION
   spec.authors       = ['Neil Slater']
   spec.email         = ['slobo777@gmail.com']
-  spec.description   = 'Fast valid cross-correlation for multidimensional Numo::NArray values, ' \
-                       'with native and FFT implementations.'
+  spec.description   = 'Fast cross-correlation for multidimensional Numo::NArray values, ' \
+                       'with configurable output and boundary modes.'
   spec.summary       = 'Fast cross-correlation for Numo::NArray'
   spec.homepage      = 'https://github.com/neilslater/convolver'
   spec.license       = 'MIT'

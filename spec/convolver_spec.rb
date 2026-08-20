@@ -67,12 +67,15 @@ describe Convolver do
   end
 
   describe '.convolve_fftw3' do
-    it 'warns and delegates to .convolve_fft' do
+    it 'warns and delegates all options to .convolve_fft' do
       signal = Numo::SFloat[0.3, 0.4, 0.5]
       kernel = Numo::SFloat[1.3, -0.5]
+      allow(described_class).to receive(:convolve_fft).and_call_original
 
-      expect { described_class.convolve_fftw3(signal, kernel) }
+      expect { described_class.convolve_fftw3(signal, kernel, mode: :full, fill_value: -1) }
         .to output(/deprecated; use \.convolve_fft/).to_stderr
+      expect(described_class).to have_received(:convolve_fft)
+        .with(signal, kernel, mode: :full, boundary: :constant, fill_value: -1, origin: 0)
     end
   end
 end

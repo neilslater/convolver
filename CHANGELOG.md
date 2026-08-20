@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added `:valid`, `:same`, and `:full` output modes to every calculation and
+  estimator method.
+- Added constant, nearest, reflect, mirror, and wrap signal boundary extensions,
+  including nonzero constant fill and kernels larger than the signal where the
+  output mode permits them.
+- Added scalar and per-axis kernel origins with an explicit even-kernel
+  alignment convention.
+- Added an origin-aware circular PocketFFT correlation path for periodic
+  same-sized output.
+
+### Changed
+
+- Made algorithm selection and both public time estimators account for output
+  shape, boundary extension, kernel folding, and FFT working shape.
+- Moved the native valid-only calculation behind a shared Ruby orchestration
+  layer so direct and FFT implementations use identical option validation and
+  boundary semantics.
+
 ## [1.0.1] - 2026-07-29
 
 ### Fixed
@@ -54,5 +76,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the native extension to use the maintained Numo C API and removed the
   legacy untyped-data compatibility code.
 
+[Unreleased]: https://github.com/neilslater/convolver/compare/v1.0.1...HEAD
 [1.0.1]: https://github.com/neilslater/convolver/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/neilslater/convolver/compare/v0.3.2...v1.0.0
