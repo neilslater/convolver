@@ -7,7 +7,7 @@ gemspec
 
 gem 'ncs_rubocop_conf',
     github: 'neilslater/ncs_rubocop_conf',
-    ref: '3f030f77dbbda9f2af5bc15e13c13c2b2b7bb687',
+    tag: 'v0.2.0',
     require: false
 gem 'rake', '>= 1.9.1'
 gem 'rake-compiler', '>= 0.8.3'
