@@ -1,10 +1,10 @@
 GIT
   remote: https://github.com/neilslater/ncs_rubocop_conf.git
-  revision: 8953c592a3a58b67dfeebac189140fdc5cc5dac9
-  tag: v0.1.0
+  revision: 3f030f77dbbda9f2af5bc15e13c13c2b2b7bb687
+  ref: 3f030f77dbbda9f2af5bc15e13c13c2b2b7bb687
   specs:
-    ncs_rubocop_conf (0.1.0)
-      rubocop (~> 1.88.0, >= 1.88.2)
+    ncs_rubocop_conf (0.2.0)
+      rubocop (~> 1.89.0, >= 1.89.0)
       rubocop-rake (~> 0.7.0, >= 0.7.1)
       rubocop-rspec (~> 3.10.0, >= 3.10.2)
 
@@ -20,7 +20,7 @@ GEM
   specs:
     ast (2.4.3)
     diff-lcs (1.6.2)
-    json (2.21.1)
+    json (2.21.2)
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     numo-narray-alt (0.10.5)
@@ -50,7 +50,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.7)
-    rubocop (1.88.2)
+    rubocop (1.89.0)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
