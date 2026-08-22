@@ -1,6 +1,6 @@
-// ext/convolver/convolve_raw.c
+// ext/convolver/correlate_raw.c
 
-#include "convolve_raw.h"
+#include "correlate_raw.h"
 
 static inline size_t checked_add( size_t left, size_t right, const char *description ) {
   if ( right > SIZE_MAX - left ) {
@@ -70,10 +70,10 @@ static inline size_t maximum_offset(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Convolve
+//  Correlate
 //
 
-void convolve_raw(
+void correlate_raw(
     int in_rank, const size_t *in_shape, const float *in_ptr,
     int kernel_rank, const size_t *kernel_shape, const float *kernel_ptr,
     int out_rank, const size_t *out_shape, float *out_ptr ) {
@@ -115,7 +115,7 @@ void convolve_raw(
   offset = 0;
   corner_reset( out_rank, out_shape, out_q );
 
-  // Main convolution loop
+  // Main correlation loop
   for ( i = 0; i < out_size; i++ ) {
 #if CONVOLVER_USE_SSE
     __m128 simd_x, simd_y, simd_t;
@@ -129,12 +129,8 @@ void convolve_raw(
     for ( j = 0; j < kernel_aligned; j +=4 ) {
       simd_x = _mm_load_ps( kernel_ptr + j );
       // Yes the backwards alignment is correct
-      simd_y = _mm_set_ps(
-        in_ptr[ offset + kernel_co_incr_cache[kernel_size - 1 - (j+3)] ],
-        in_ptr[ offset + kernel_co_incr_cache[kernel_size - 1 - (j+2)] ],
-        in_ptr[ offset + kernel_co_incr_cache[kernel_size - 1 - (j+1)] ],
-        in_ptr[ offset + kernel_co_incr_cache[kernel_size - 1 - j] ]
-      );
+      simd_y = _mm_set_ps( in_ptr[ offset + kernel_co_incr_cache[j+3] ], in_ptr[ offset + kernel_co_incr_cache[j+2] ],
+                           in_ptr[ offset + kernel_co_incr_cache[j+1] ], in_ptr[ offset + kernel_co_incr_cache[j] ] );
       simd_x = _mm_mul_ps( simd_x, simd_y );
       simd_t = _mm_add_ps( simd_x, simd_t );
     }
@@ -143,13 +139,13 @@ void convolve_raw(
     // SSE is unavailable on architectures such as Apple Silicon.
     // Use the same calculation without x86-specific intrinsics.
     for ( j = 0; j < kernel_aligned; j++ ) {
-      t += in_ptr[ offset + kernel_co_incr_cache[kernel_size - 1 - j] ] * kernel_ptr[j];
+      t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[j];
     }
 #endif
 
     // Complete any remaining 1,2 or 3 items one at a time
     for ( j = kernel_aligned; j < kernel_size; j++ ) {
-      t += in_ptr[ offset + kernel_co_incr_cache[kernel_size - 1 - j] ] * kernel_ptr[ j ];
+      t += in_ptr[ offset + kernel_co_incr_cache[j] ] * kernel_ptr[ j ];
     }
 
 #if CONVOLVER_USE_SSE

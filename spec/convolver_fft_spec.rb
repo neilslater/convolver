@@ -3,96 +3,124 @@
 require 'helpers'
 
 describe Convolver do
+  describe '.correlate_fft' do
+    it 'preserves the version 2 valid cross-correlation behavior' do
+      result = described_class.correlate_fft(
+        ConvolutionFixtures.one_dimensional_signal, ConvolutionFixtures.one_dimensional_kernel
+      )
+      expect(result).to be_narray_like NArray[13, 26]
+    end
+
+    it 'preserves the higher-dimensional correlation fixtures' do
+      results = [
+        described_class.correlate_fft(CorrelationFixtures.three_dimensional_signal,
+                                      CorrelationFixtures.three_dimensional_kernel),
+        described_class.correlate_fft(CorrelationFixtures.four_dimensional_signal,
+                                      CorrelationFixtures.four_dimensional_kernel)
+      ]
+      expected = [CorrelationFixtures.three_dimensional_result, CorrelationFixtures.four_dimensional_result]
+      expect(results.zip(expected)).to all(satisfy { |result, fixture| be_narray_like(fixture).matches?(result) })
+    end
+  end
+
   describe '.convolve_fft' do
-    it 'works like the example in the README' do
-      a = NArray[0.3, 0.4, 0.5]
-      b = NArray[1.3, -0.5]
-      c = described_class.convolve_fft(a, b)
-      expect(c).to be_narray_like NArray[0.19, 0.27]
+    it 'calculates the literal asymmetric convolution fixture' do
+      result = described_class.convolve_fft(
+        ConvolutionFixtures.one_dimensional_signal, ConvolutionFixtures.one_dimensional_kernel
+      )
+      expect(result).to be_narray_like ConvolutionFixtures.one_dimensional_valid
     end
 
-    one_dimensional_cases = [
-      [[0.3], [-0.7], [-0.21]],
-      [[0.3, 0.4, 0.5, 0.2], [-0.7], [-0.21, -0.28, -0.35, -0.14]],
-      [[0.3, 0.4, 0.5, 0.2], [1.1, -0.7], [0.05, 0.09, 0.41]],
-      [[0.3, 0.4, 0.5, 0.2], [1.1, -0.7, -0.2], [-0.05, 0.05]],
-      [[0.3, 0.4, 0.5, 0.2, 0.6], [1.1, -0.7], [0.05, 0.09, 0.41, -0.2]],
-      [[0.3, 0.4, 0.5, 0.2, 0.6], [1.1, -0.7, 2.1], [1.1, 0.51, 1.67]],
-      [[0.3, 0.4, 0.5, 0.2, 0.6], [0.6, -0.5, -0.4, 0.7], [-0.08, 0.33]]
-    ]
-
-    one_dimensional_cases.each_with_index do |(signal, kernel, expected), index|
-      it "convolves 1D signal and kernel case #{index + 1}" do
-        expect(described_class.convolve_fft(NArray[*signal], NArray[*kernel])).to be_narray_like NArray[*expected]
-      end
+    it 'calculates asymmetric 2D mathematical convolution' do
+      result = described_class.convolve_fft(
+        ConvolutionFixtures.two_dimensional_signal, ConvolutionFixtures.two_dimensional_kernel
+      )
+      expect(result).to be_narray_like ConvolutionFixtures.two_dimensional_valid
     end
+  end
 
-    it 'calculates a 2D convolution' do
-      a = NArray[[0.3, 0.4, 0.5], [0.6, 0.8, 0.2], [0.9, 1.0, 0.1]]
-      b = NArray[[1.2, -0.5], [0.5, -1.3]]
-      c = described_class.convolve_fft(a, b)
-      expect(c).to be_narray_like NArray[[-0.58, 0.37], [-0.53, 1.23]]
-    end
+  OperationReference::OPERATIONS.each do |operation|
+    fft_method = OperationReference::CALCULATION_METHODS.fetch(operation).last
+    basic_method = OperationReference::CALCULATION_METHODS.fetch(operation)[1]
 
-    it 'calculates a 3D convolution' do
-      result = described_class.convolve_fft(ConvolutionFixtures.three_dimensional_signal,
-                                            ConvolutionFixtures.three_dimensional_kernel)
-      expect(result).to be_narray_like ConvolutionFixtures.three_dimensional_result
-    end
-
-    it 'calculates a 4D convolution' do
-      result = described_class.convolve_fft(ConvolutionFixtures.four_dimensional_signal,
-                                            ConvolutionFixtures.four_dimensional_kernel)
-      expect(result).to be_narray_like ConvolutionFixtures.four_dimensional_result
-    end
-
-    describe 'compared with .convolve_basic' do
-      it 'produces same results for 1D arrays' do
-        expect_one_dimensional_fft_to_match_basic
-      end
-
-      it 'produces same results for 2D arrays' do
-        expect_two_dimensional_fft_to_match_basic
-      end
-
-      it 'produces same results for 3D arrays' do
-        expect_three_dimensional_fft_to_match_basic
-      end
-    end
-
-    def expect_one_dimensional_fft_to_match_basic
-      (1..30).each do |signal_length|
-        (1..signal_length).each { |kernel_length| expect_fft_to_match_basic([signal_length], [kernel_length]) }
-      end
-    end
-
-    def expect_two_dimensional_fft_to_match_basic
-      (3..10).each do |signal_x|
-        ((signal_x - 2)..(signal_x + 2)).each do |signal_y|
-          (1..signal_x).to_a.product((1..signal_y).to_a).each do |kernel_shape|
-            expect_fft_to_match_basic([signal_x, signal_y], kernel_shape)
+    describe ".#{fft_method} compared with .#{basic_method}" do
+      it 'matches for 1D arrays, including odd full-transform lengths' do
+        (1..30).each do |signal_length|
+          (1..signal_length).each do |kernel_length|
+            expect_fft_to_match_basic(operation, [signal_length], [kernel_length])
           end
         end
       end
+
+      it 'matches for rectangular 2D arrays' do
+        expect_rectangular_fft_to_match_basic(operation)
+      end
+
+      it 'matches selected 3D arrays' do
+        expect_random_fft_to_match_basic(operation)
+      end
+    end
+  end
+
+  describe 'real transform shape selection' do
+    it 'uses the smallest valid even final axis when its factors are competitive' do
+      plan, kernel_shape = fft_plan([60, 60, 60], [4, 4, 4])
+      expect(plan.linear_fft_shape(kernel_shape)).to eq [63, 63, 64]
     end
 
-    def expect_three_dimensional_fft_to_match_basic
-      (3..5).each do |signal_x|
-        neighbors = ((signal_x - 2)..(signal_x + 2)).to_a
-        neighbors.product(neighbors).each do |signal_y, signal_z|
-          kernel_ranges = [signal_x, signal_y, signal_z].map { |size| (1..size).to_a }
-          kernel_ranges.first.product(*kernel_ranges.drop(1)).each do |kernel_shape|
-            expect_fft_to_match_basic([signal_x, signal_y, signal_z], kernel_shape)
-          end
+    it 'uses a fast real shape instead of retaining large prime factors' do
+      plan, kernel_shape = fft_plan([192, 256], [15, 18])
+      expect(plan.linear_fft_shape(kernel_shape)).to eq [216, 288]
+    end
+
+    it 'rejects linear FFT shape overflow before allocation' do
+      shapes_class = described_class.const_get(:OperationShapes, false)
+      shapes = shapes_class.new([shapes_class::SIZE_MAX], [2],
+                                operation: :correlation, mode: :valid, anchors: [1])
+      expect { shapes.linear_fft_shape([2]) }
+        .to raise_error(RangeError, 'FFT shape exceeds native implementation limit')
+    end
+  end
+
+  def expect_fft_to_match_basic(operation, signal_shape, kernel_shape)
+    signal = NArray.sfloat(*signal_shape).random
+    kernel = NArray.sfloat(*kernel_shape).random
+    methods = OperationReference::CALCULATION_METHODS.fetch(operation)
+    expected = described_class.public_send(methods[1], signal, kernel)
+    expect(described_class.public_send(methods[2], signal, kernel)).to be_narray_like expected
+  end
+
+  def expect_rectangular_fft_to_match_basic(operation)
+    (3..9).each do |signal_x|
+      ((signal_x - 2)..(signal_x + 2)).each do |signal_y|
+        kernel_shapes(signal_x, signal_y).each do |kernel_shape|
+          expect_fft_to_match_basic(operation, [signal_x, signal_y], kernel_shape)
         end
       end
     end
+  end
 
-    def expect_fft_to_match_basic(signal_shape, kernel_shape)
-      signal = NArray.sfloat(*signal_shape).random
-      kernel = NArray.sfloat(*kernel_shape).random
-      expected = described_class.convolve_basic(signal, kernel)
-      expect(described_class.convolve_fft(signal, kernel)).to be_narray_like expected
+  def kernel_shapes(signal_x, signal_y)
+    (1..signal_x).to_a.product((1..signal_y).to_a)
+  end
+
+  def expect_random_fft_to_match_basic(operation)
+    random = Random.new(operation == :correlation ? 12_345 : 54_321)
+    100.times do
+      signal_shape = Array.new(3) { random.rand(2..8) }
+      kernel_shape = signal_shape.map { |size| random.rand(1..size) }
+      expect_fft_to_match_basic(operation, signal_shape, kernel_shape)
     end
+  end
+
+  def fft_plan(signal_shape, kernel_shape)
+    signal = NArray.zeros(*signal_shape)
+    kernel = NArray.zeros(*kernel_shape)
+    plan_class = described_class.const_get(:OperationPlan, false)
+    plan = plan_class.new(
+      signal, kernel, operation: :correlation, mode: :valid,
+                      boundary: :constant, fill_value: 0.0, origin: 0
+    )
+    [plan, kernel_shape]
   end
 end
