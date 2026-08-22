@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-22
+
+### Added
+
+- Added the `correlate`, `correlate_basic`, and `correlate_fft` calculation
+  methods for cross-correlation, preserving the numerical operation exposed by
+  the version 2 `convolve*` methods.
+- Added `predict_correlate_basic_time` and `predict_correlate_fft_time` as the
+  corresponding estimator family.
+- Added distinct native correlation and convolution primitives whose hot loops
+  perform the required traversal directly without materializing a reversed
+  kernel.
+
+### Changed
+
+- **Breaking:** Changed `convolve`, `convolve_basic`, and `convolve_fft` to
+  calculate mathematical discrete convolution. Version 2 users who need
+  unchanged results must rename these calls to their `correlate*` counterparts.
+- **Breaking:** Changed the `predict_convolve_*_time` methods to estimate the
+  new mathematical convolution implementations.
+- Defined operation-specific `:same` alignment. Correlation uses
+  `signal[i + j - anchor]`; convolution uses
+  `signal[i + anchor - j]`. This places the extra boundary sample for an even
+  kernel on opposite sides.
+- Reworked linear PocketFFT calculations around real transforms and checked
+  exact/even or 2/3/5-smooth transform shapes. Circular calculations use real
+  transforms when an axis is even and retain complex transforms for all-odd
+  shapes.
+
+### Removed
+
+- **Breaking:** Removed the deprecated `convolve_fftw3` compatibility method.
+  Use `correlate_fft` to preserve version 2 results or `convolve_fft` for
+  mathematical convolution.
+
 ## [2.0.0] - 2026-08-20
 
 ### Added
@@ -81,7 +116,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the native extension to use the maintained Numo C API and removed the
   legacy untyped-data compatibility code.
 
-[Unreleased]: https://github.com/neilslater/convolver/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/neilslater/convolver/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/neilslater/convolver/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/neilslater/convolver/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/neilslater/convolver/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/neilslater/convolver/compare/v0.3.2...v1.0.0

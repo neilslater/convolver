@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
 module Convolver
-  # Validates and normalizes the options for a correlation operation.
+  # Validates and normalizes one convolution or correlation operation.
   class OperationOptions
+    OPERATIONS = %i[convolution correlation].freeze
     MODES = %i[valid same full].freeze
     BOUNDARIES = %i[constant nearest reflect mirror wrap].freeze
 
-    attr_reader :mode, :boundary, :fill_value, :origins, :anchors
+    attr_reader :operation, :mode, :boundary, :fill_value, :origins, :anchors
 
-    def initialize(signal, kernel, mode:, boundary:, fill_value:, origin:)
+    def initialize(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
       validate_inputs!(signal, kernel)
-      validate_vocabulary!(mode, boundary)
-      assign_options(signal, kernel, mode:, boundary:, fill_value:, origin:)
+      validate_vocabulary!(operation, mode, boundary)
+      assign_options(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
       validate_combinations!(signal.shape, kernel.shape)
     end
 
@@ -26,14 +27,16 @@ module Convolver
       raise ArgumentError, "maximum supported rank is #{MAX_RANK}" if signal.ndim > MAX_RANK
     end
 
-    def validate_vocabulary!(mode, boundary)
+    def validate_vocabulary!(operation, mode, boundary)
+      raise ArgumentError, "operation must be one of #{OPERATIONS.inspect}" unless OPERATIONS.include?(operation)
       raise ArgumentError, "mode must be one of #{MODES.inspect}" unless MODES.include?(mode)
       return if BOUNDARIES.include?(boundary)
 
       raise ArgumentError, "boundary must be one of #{BOUNDARIES.inspect}"
     end
 
-    def assign_options(signal, kernel, mode:, boundary:, fill_value:, origin:)
+    def assign_options(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
+      @operation = operation
       @mode = mode
       @boundary = boundary
       @fill_value_given = !fill_value.equal?(UNSPECIFIED_FILL)

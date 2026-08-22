@@ -11,7 +11,7 @@ GIT
 PATH
   remote: .
   specs:
-    convolver (2.0.0)
+    convolver (3.0.0)
       numo-narray-alt (>= 0.9.9, < 0.11)
       numo-pocketfft (>= 0.6, < 0.8)
 

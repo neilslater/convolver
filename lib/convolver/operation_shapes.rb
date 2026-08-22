@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'convolver/real_fft_shape'
+
 module Convolver
   # Calculates and validates output, extension, and FFT dimensions.
   class OperationShapes
@@ -8,26 +10,35 @@ module Convolver
     attr_reader :padding_before, :padding_after, :result_shape,
                 :extended_shape, :result_size, :extended_size
 
-    def initialize(signal_shape, kernel_shape, mode:, anchors:)
+    def initialize(signal_shape, kernel_shape, operation:, mode:, anchors:)
+      @operation = operation
       @mode = mode
       calculate_shapes(signal_shape, kernel_shape, anchors)
       validate_sizes!
     end
 
     def linear_fft_shape(kernel_shape)
-      checked_shape(
-        extended_shape.zip(kernel_shape).map { |signal_size, kernel_size| signal_size + kernel_size - 1 },
-        'FFT shape'
-      )
+      return [].freeze if kernel_shape.empty?
+
+      RealFftShape.new(linear_result_shape(kernel_shape), size_max: SIZE_MAX).call
     end
 
     def linear_fft_size(kernel_shape)
       checked_product(linear_fft_shape(kernel_shape), 'FFT size')
     end
 
+    def linear_spectrum_size(kernel_shape)
+      shape = linear_fft_shape(kernel_shape)
+      return 1 if shape.empty?
+
+      spectrum_shape = shape.dup
+      spectrum_shape[-1] = (spectrum_shape[-1] / 2) + 1
+      checked_product(spectrum_shape, 'FFT spectrum size')
+    end
+
     private
 
-    attr_reader :mode
+    attr_reader :operation, :mode
 
     def calculate_shapes(signal_shape, kernel_shape, anchors)
       @padding_before, @padding_after, @result_shape = shapes_for(signal_shape, kernel_shape, anchors)
@@ -53,8 +64,15 @@ module Convolver
     end
 
     def same_shapes(signal_shape, kernel_shape, anchors)
-      before = anchors.dup.freeze
-      after = kernel_shape.zip(anchors).map { |kernel_size, anchor| kernel_size - 1 - anchor }.freeze
+      correlation_before = anchors.dup
+      correlation_after = kernel_shape.zip(anchors).map { |kernel_size, anchor| kernel_size - 1 - anchor }
+      before, after = if operation == :correlation
+                        [correlation_before, correlation_after]
+                      else
+                        [correlation_after, correlation_before]
+                      end
+      before.freeze
+      after.freeze
       [before, after, signal_shape.dup]
     end
 
@@ -89,6 +107,19 @@ module Convolver
 
         product * size
       end
+    end
+
+    def linear_result_shape(kernel_shape)
+      shape = extended_shape.zip(kernel_shape).map do |signal_size, kernel_size|
+        checked_add(signal_size, kernel_size - 1, 'FFT shape')
+      end
+      checked_shape(shape, 'FFT shape')
+    end
+
+    def checked_add(left, right, description)
+      return left + right if right <= SIZE_MAX - left
+
+      raise RangeError, "#{description} exceeds native implementation limit"
     end
   end
 

@@ -1,12 +1,12 @@
-// ext/convolver/convolve_raw.h
+// ext/convolver/correlate_raw.h
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Declarations of narray helper functions
 //
 
-#ifndef CONVOLVE_RAW_H
-#define CONVOLVE_RAW_H
+#ifndef CORRELATE_RAW_H
+#define CORRELATE_RAW_H
 
 #ifndef CONVOLVER_RAW_CONFIG
 #define CONVOLVER_RAW_CONFIG
@@ -20,7 +20,7 @@
 #define LARGEST_RANK 16
 #endif
 
-void convolve_raw(
+void correlate_raw(
     int in_rank, const size_t *in_shape, const float *in_ptr,
     int kernel_rank, const size_t *kernel_shape, const float *kernel_ptr,
     int out_rank, const size_t *out_shape, float *out_ptr );

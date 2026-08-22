@@ -2,9 +2,15 @@
 #include <numo/narray.h>
 #include <numo/intern.h>
 
+#include "correlate_raw.h"
 #include "convolve_raw.h"
 
 static VALUE mConvolver;
+
+enum convolver_operation {
+  CONVOLVER_CORRELATION,
+  CONVOLVER_CONVOLUTION
+};
 
 static void copy_shape(int rank, const size_t *source, size_t *target) {
   int i;
@@ -14,15 +20,7 @@ static void copy_shape(int rank, const size_t *source, size_t *target) {
   }
 }
 
-/*
- * Calculates a valid cross-correlation using the direct native implementation.
- *
- * @overload convolve_basic_valid(signal, kernel)
- *   @param signal [Numo::NArray] input values
- *   @param kernel [Numo::NArray] correlation kernel
- *   @return [Numo::SFloat] valid cross-correlation result
- */
-static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kernel) {
+static VALUE convolver_basic_valid(VALUE signal, VALUE kernel, enum convolver_operation operation) {
   volatile VALUE signal_value;
   volatile VALUE kernel_value;
   volatile VALUE result_value;
@@ -34,8 +32,6 @@ static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kern
   size_t kernel_shape[LARGEST_RANK];
   size_t result_shape[LARGEST_RANK];
   size_t numo_result_shape[LARGEST_RANK];
-
-  (void)self;
 
   if (!rb_obj_is_kind_of(signal, numo_cNArray) || !rb_obj_is_kind_of(kernel, numo_cNArray)) {
     rb_raise(rb_eArgError, "signal and kernel must be Numo::NArray values");
@@ -76,16 +72,51 @@ static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kern
   }
 
   result_value = nary_new(numo_cSFloat, rank, numo_result_shape);
-  convolve_raw(
-    rank, signal_shape, (float *)na_get_pointer_for_read(signal_value),
-    rank, kernel_shape, (float *)na_get_pointer_for_read(kernel_value),
-    rank, result_shape, (float *)na_get_pointer_for_write(result_value)
-  );
+  if (operation == CONVOLVER_CORRELATION) {
+    correlate_raw(
+      rank, signal_shape, (float *)na_get_pointer_for_read(signal_value),
+      rank, kernel_shape, (float *)na_get_pointer_for_read(kernel_value),
+      rank, result_shape, (float *)na_get_pointer_for_write(result_value)
+    );
+  } else {
+    convolve_raw(
+      rank, signal_shape, (float *)na_get_pointer_for_read(signal_value),
+      rank, kernel_shape, (float *)na_get_pointer_for_read(kernel_value),
+      rank, result_shape, (float *)na_get_pointer_for_write(result_value)
+    );
+  }
 
   return result_value;
 }
 
+/*
+ * Calculates a valid cross-correlation using the direct native implementation.
+ *
+ * @overload correlate_basic_valid(signal, kernel)
+ *   @param signal [Numo::NArray] input values
+ *   @param kernel [Numo::NArray] correlation kernel
+ *   @return [Numo::SFloat] valid cross-correlation result
+ */
+static VALUE convolver_correlate_basic_valid(VALUE self, VALUE signal, VALUE kernel) {
+  (void)self;
+  return convolver_basic_valid(signal, kernel, CONVOLVER_CORRELATION);
+}
+
+/*
+ * Calculates a valid mathematical convolution using the direct native implementation.
+ *
+ * @overload convolve_basic_valid(signal, kernel)
+ *   @param signal [Numo::NArray] input values
+ *   @param kernel [Numo::NArray] convolution kernel
+ *   @return [Numo::SFloat] valid mathematical convolution result
+ */
+static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kernel) {
+  (void)self;
+  return convolver_basic_valid(signal, kernel, CONVOLVER_CONVOLUTION);
+}
+
 void Init_convolver(void) {
   mConvolver = rb_define_module("Convolver");
+  rb_define_singleton_method(mConvolver, "correlate_basic_valid", convolver_correlate_basic_valid, 2);
   rb_define_singleton_method(mConvolver, "convolve_basic_valid", convolver_convolve_basic_valid, 2);
 }
