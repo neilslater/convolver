@@ -44,6 +44,10 @@ describe Convolver do
     basic_method = OperationReference::CALCULATION_METHODS.fetch(operation)[1]
 
     describe ".#{fft_method} compared with .#{basic_method}" do
+      before do
+        Numo::NArray.srand(operation == :correlation ? 12_345 : 54_321)
+      end
+
       it 'matches for 1D arrays, including odd full-transform lengths' do
         (1..30).each do |signal_length|
           (1..signal_length).each do |kernel_length|

@@ -4,6 +4,7 @@ require 'convolver/real_fft_shape'
 
 module Convolver
   # Calculates and validates output, extension, and FFT dimensions.
+  # @private
   class OperationShapes
     SIZE_MAX = (1 << ([0].pack('J').bytesize * 8)) - 1
 

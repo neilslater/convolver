@@ -19,6 +19,9 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.3)
+    bundler-audit (0.9.3)
+      bundler (>= 1.2.0)
+      thor (~> 1.0)
     diff-lcs (1.6.2)
     json (2.21.2)
     language_server-protocol (3.17.0.6)
@@ -73,6 +76,7 @@ GEM
       rubocop (~> 1.86, >= 1.86.2)
     ruby-progressbar (1.13.0)
     simplecov (1.0.2)
+    thor (1.5.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
@@ -83,12 +87,13 @@ PLATFORMS
   x86_64-darwin-23
 
 DEPENDENCIES
+  bundler-audit (~> 0.9)
   convolver!
   ncs_rubocop_conf!
   rake (>= 1.9.1)
   rake-compiler (>= 0.8.3)
   rspec (>= 2.13.0)
-  simplecov (>= 0.22)
+  simplecov (~> 1.0)
   yard (>= 0.8.7.2)
 
 BUNDLED WITH

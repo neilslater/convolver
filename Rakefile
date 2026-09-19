@@ -10,7 +10,7 @@ require 'shellwords'
 
 desc 'Convolver unit tests'
 RSpec::Core::RakeTask.new(:test) do |t|
-  t.pattern = 'spec/*_spec.rb'
+  t.pattern = 'spec/**/*_spec.rb'
   t.verbose = true
 end
 
@@ -24,6 +24,8 @@ Rake::ExtensionTask.new do |ext|
 end
 
 task default: %i[compile test]
+
+import 'tasks/documentation.rake'
 
 rebuild_and_test_native = lambda do |mode, test: true|
   tasks = %w[clean compile]

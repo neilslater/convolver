@@ -2,6 +2,7 @@
 
 module Convolver
   # Extends a signal according to one operation's boundary policy.
+  # @private
   class SignalExtension
     def initialize(shapes, boundary:, fill_value:)
       @shapes = shapes

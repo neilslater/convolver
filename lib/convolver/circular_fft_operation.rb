@@ -2,6 +2,7 @@
 
 module Convolver
   # Calculates same-sized periodic operations through PocketFFT transforms.
+  # @private
   class CircularFftOperation
     def initialize(operation, signal, kernel, plan)
       @operation = operation

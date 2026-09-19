@@ -184,10 +184,15 @@ bundle exec rake
 bundle exec rubocop
 bundle exec ncs-rubocop-conf-audit
 bundle exec rake c:lint
+bundle exec bundle-audit check --update
+bundle exec rake docs:check
 ```
 
-The Ruby specs exercise both the Ruby API and native extension. Additional
-native-code checks are available:
+The Ruby specs exercise both the Ruby API and native extension and enforce 95%
+line and branch coverage for the Ruby library. Dependency auditing refreshes
+the advisory database and requires network access. The documentation check
+rejects YARD warnings and undocumented public API objects; private implementation
+classes are marked `@private`. Additional native-code checks are available:
 
 ```sh
 bundle exec rake c:coverage  # Requires GCC and gcovr
