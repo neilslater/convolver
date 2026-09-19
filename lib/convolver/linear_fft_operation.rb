@@ -2,6 +2,7 @@
 
 module Convolver
   # Calculates a valid linear operation through real PocketFFT transforms.
+  # @private
   class LinearFftOperation
     def initialize(operation, signal, kernel, plan)
       @operation = operation

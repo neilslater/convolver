@@ -9,9 +9,11 @@ require 'convolver/signal_extension'
 module Convolver
   # Distinguishes an omitted fill_value keyword from an explicitly supplied
   # value. This lets non-constant boundaries reject even an explicit zero.
+  # @private
   UNSPECIFIED_FILL = Object.new.freeze
 
   # Validated dimensions and boundary-extension details for one operation.
+  # @private
   class OperationPlan
     extend Forwardable
 

@@ -2,6 +2,7 @@
 
 module Convolver
   # Validates and normalizes one convolution or correlation operation.
+  # @private
   class OperationOptions
     OPERATIONS = %i[convolution correlation].freeze
     MODES = %i[valid same full].freeze

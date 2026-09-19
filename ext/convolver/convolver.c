@@ -92,6 +92,7 @@ static VALUE convolver_basic_valid(VALUE signal, VALUE kernel, enum convolver_op
 /*
  * Calculates a valid cross-correlation using the direct native implementation.
  *
+ * @private
  * @overload correlate_basic_valid(signal, kernel)
  *   @param signal [Numo::NArray] input values
  *   @param kernel [Numo::NArray] correlation kernel
@@ -105,6 +106,7 @@ static VALUE convolver_correlate_basic_valid(VALUE self, VALUE signal, VALUE ker
 /*
  * Calculates a valid mathematical convolution using the direct native implementation.
  *
+ * @private
  * @overload convolve_basic_valid(signal, kernel)
  *   @param signal [Numo::NArray] input values
  *   @param kernel [Numo::NArray] convolution kernel

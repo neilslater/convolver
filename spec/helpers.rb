@@ -5,6 +5,9 @@ unless ENV['CONVOLVER_DISABLE_SIMPLECOV']
   require 'simplecov'
   SimpleCov.start do
     enable_coverage :branch
+    minimum_coverage line: 95, branch: 95
+    cover 'lib/**/*.rb'
+    merging false
   end
 end
 

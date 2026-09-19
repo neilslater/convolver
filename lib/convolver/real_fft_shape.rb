@@ -2,6 +2,7 @@
 
 module Convolver
   # Selects a safe real-transform shape from exact/even and fast candidates.
+  # @private
   class RealFftShape
     def initialize(minimum_shape, size_max:)
       @minimum_shape = minimum_shape

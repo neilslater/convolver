@@ -2,6 +2,7 @@
 
 module Convolver
   # Coordinates validation, implementation selection, and one operation family.
+  # @private
   class OperationExecution
     DIRECT_OPERATION_COST = { 1 => 6.8e-10, 2 => 5.9e-10, 3 => 4.5e-10 }.freeze
     EXTENSION_COST = 1.0e-9

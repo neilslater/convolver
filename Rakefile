@@ -25,6 +25,8 @@ end
 
 task default: %i[compile test]
 
+import 'tasks/documentation.rake'
+
 rebuild_and_test_native = lambda do |mode, test: true|
   tasks = %w[clean compile]
   tasks << 'test' if test

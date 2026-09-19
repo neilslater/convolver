@@ -2,6 +2,7 @@
 
 module Convolver
   # Estimates the selected real or complex PocketFFT implementation cost.
+  # @private
   class FftEstimator
     REAL_FFT_COST = { 1 => 1.0e-9, 2 => 9.0e-10, 3 => 1.45e-9 }.freeze
     COMPLEX_FFT_COST = { 1 => 2.4e-9, 2 => 2.4e-9, 3 => 2.8e-9 }.freeze
