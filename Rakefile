@@ -10,7 +10,7 @@ require 'shellwords'
 
 desc 'Convolver unit tests'
 RSpec::Core::RakeTask.new(:test) do |t|
-  t.pattern = 'spec/*_spec.rb'
+  t.pattern = 'spec/**/*_spec.rb'
   t.verbose = true
 end
 

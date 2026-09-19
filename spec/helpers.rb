@@ -25,7 +25,8 @@ require 'convolution_fixtures'
 require 'correlation_fixtures'
 require 'operation_reference'
 
-# Matcher compares Numo::NArray values numerically.
+# Matcher compares finite Numo::NArray values using mean square error.
+# Assert non-finite values separately by their expected positions and signs.
 RSpec::Matchers.define :be_narray_like do |expected_narray, mse = 1e-9|
   match do |given|
     @error = nil
@@ -38,7 +39,9 @@ RSpec::Matchers.define :be_narray_like do |expected_narray, mse = 1e-9|
     unless @error
       d = given - expected_narray
       difference = (d * d).sum / d.size
-      @error = "Numerical difference with mean square error #{difference}" if difference > mse
+      unless difference.finite? && difference <= mse
+        @error = "Numerical difference with mean square error #{difference}"
+      end
     end
     @given = given.clone
 
