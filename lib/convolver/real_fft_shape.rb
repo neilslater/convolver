@@ -11,15 +11,20 @@ module Convolver
 
     def call
       exact_shape = even_final_axis(minimum_shape)
-      fast_shape = exact_shape.map.with_index do |size, axis|
-        next_fast_size(size, even: axis == exact_shape.length - 1)
-      end
-      [exact_shape, fast_shape].min_by { |shape| transform_cost(shape) }.freeze
+      candidates = [exact_shape, fast_shape(exact_shape)].compact.select { |shape| representable?(shape) }
+      (candidates.min_by { |shape| transform_cost(shape) } || raise_overflow).freeze
     end
 
     private
 
     attr_reader :minimum_shape, :size_max
+
+    def fast_shape(exact_shape)
+      fast_shape = exact_shape.map.with_index do |size, axis|
+        next_fast_size(size, even: axis == exact_shape.length - 1)
+      end
+      fast_shape if fast_shape.all?
+    end
 
     def even_final_axis(shape)
       result = shape.dup
@@ -35,7 +40,7 @@ module Convolver
           best = candidate if candidate && (!best || candidate < best)
         end
       end
-      best || raise_overflow
+      best
     end
 
     def each_power(factor, initial = 1)
@@ -59,7 +64,7 @@ module Convolver
     end
 
     def transform_cost(shape)
-      checked_product(shape) * shape.sum { |size| Math.log2(size) + large_factor_penalty(size) }
+      shape.reduce(:*) * shape.sum { |size| Math.log2(size) + large_factor_penalty(size) }
     end
 
     def large_factor_penalty(size)
@@ -87,12 +92,13 @@ module Convolver
       value
     end
 
-    def checked_product(shape)
+    def representable?(shape)
       shape.reduce(1) do |product, size|
-        raise_overflow if !product.zero? && size > size_max / product
+        return false if !product.zero? && size > size_max / product
 
         product * size
       end
+      true
     end
 
     def checked_add(left, right)

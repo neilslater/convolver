@@ -7,6 +7,23 @@
 
 static VALUE mConvolver;
 
+/* Contiguous views share their backing storage but start at a byte offset. */
+static const float *logical_pointer_for_read(VALUE value) {
+  return (const float *)(na_get_pointer_for_read(value) + na_get_offset(value));
+}
+
+static VALUE contiguous_sfloat(VALUE value) {
+  narray_t *narray;
+
+  value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, value);
+  GetNArray(value, narray);
+  /* A scalar has no strides; Numo's contiguous check requires an axis. */
+  if (narray->ndim > 0 && !RTEST(na_check_contiguous(value))) {
+    value = na_copy(value);
+  }
+  return value;
+}
+
 enum convolver_operation {
   CONVOLVER_CORRELATION,
   CONVOLVER_CONVOLUTION
@@ -37,14 +54,8 @@ static VALUE convolver_basic_valid(VALUE signal, VALUE kernel, enum convolver_op
     rb_raise(rb_eArgError, "signal and kernel must be Numo::NArray values");
   }
 
-  signal_value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, signal);
-  kernel_value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, kernel);
-  if (!RTEST(na_check_contiguous(signal_value))) {
-    signal_value = na_copy(signal_value);
-  }
-  if (!RTEST(na_check_contiguous(kernel_value))) {
-    kernel_value = na_copy(kernel_value);
-  }
+  signal_value = contiguous_sfloat(signal);
+  kernel_value = contiguous_sfloat(kernel);
   GetNArray(signal_value, signal_narray);
   GetNArray(kernel_value, kernel_narray);
 
@@ -74,14 +85,14 @@ static VALUE convolver_basic_valid(VALUE signal, VALUE kernel, enum convolver_op
   result_value = nary_new(numo_cSFloat, rank, numo_result_shape);
   if (operation == CONVOLVER_CORRELATION) {
     correlate_raw(
-      rank, signal_shape, (float *)na_get_pointer_for_read(signal_value),
-      rank, kernel_shape, (float *)na_get_pointer_for_read(kernel_value),
+      rank, signal_shape, logical_pointer_for_read(signal_value),
+      rank, kernel_shape, logical_pointer_for_read(kernel_value),
       rank, result_shape, (float *)na_get_pointer_for_write(result_value)
     );
   } else {
     convolve_raw(
-      rank, signal_shape, (float *)na_get_pointer_for_read(signal_value),
-      rank, kernel_shape, (float *)na_get_pointer_for_read(kernel_value),
+      rank, signal_shape, logical_pointer_for_read(signal_value),
+      rank, kernel_shape, logical_pointer_for_read(kernel_value),
       rank, result_shape, (float *)na_get_pointer_for_write(result_value)
     );
   }
