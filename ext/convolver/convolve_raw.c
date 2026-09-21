@@ -125,9 +125,9 @@ void convolve_raw(
     float t = 0.0;
 
 #if CONVOLVER_USE_SSE
-    // Use SIMD for all the aligned values in groups of 4
+    // Contiguous kernel views need not start on a 16-byte boundary.
     for ( j = 0; j < kernel_aligned; j +=4 ) {
-      simd_x = _mm_load_ps( kernel_ptr + j );
+      simd_x = _mm_loadu_ps( kernel_ptr + j );
       // Yes the backwards alignment is correct
       simd_y = _mm_set_ps(
         in_ptr[ offset + kernel_co_incr_cache[kernel_size - 1 - (j+3)] ],

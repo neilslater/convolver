@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Read the logical values of contiguous signal and kernel slices in direct
+  convolution and correlation, including unaligned SSE kernels and scalar views.
+- Retain a representable exact FFT shape when an optional fast candidate exceeds
+  the native element limit.
+
 ## [3.0.0] - 2026-08-22
 
 ### Added
