@@ -16,8 +16,8 @@ Gem::Specification.new do |spec|
   spec.license       = 'MIT'
   spec.required_ruby_version = '>= 3.3'
 
-  spec.add_dependency 'numo-narray-alt', '>= 0.9.9', '< 0.11'
-  spec.add_dependency 'numo-pocketfft', '>= 0.6', '< 0.8'
+  spec.add_dependency 'numo-narray-alt', '>= 0.9.9', '< 0.12'
+  spec.add_dependency 'numo-pocketfft', '>= 0.7.0', '< 0.8'
 
   spec.files         = Dir['CHANGELOG.md', 'LICENSE.txt', 'README.md', 'lib/**/*.rb', 'ext/**/*.{c,h,rb}']
   spec.extensions    = spec.files.grep(%r{/extconf\.rb$})

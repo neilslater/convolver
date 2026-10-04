@@ -4,6 +4,7 @@ require 'forwardable'
 require 'convolver/operation_options'
 require 'convolver/operation_shapes'
 require 'convolver/signal_extension'
+require 'convolver/fft_buffer_plan'
 
 # Internal planning and extension support for Convolver's public operations.
 module Convolver
@@ -24,6 +25,8 @@ module Convolver
 
     def initialize(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
       @options = OperationOptions.new(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
+      @signal_shape = signal.shape.freeze
+      @kernel_shape = kernel.shape.freeze
       @shapes = OperationShapes.new(
         signal.shape, kernel.shape, operation:, mode:, anchors: options.anchors
       )
@@ -41,6 +44,14 @@ module Convolver
       return signal if valid?
 
       SignalExtension.new(shapes, boundary:, fill_value:).call(signal)
+    end
+
+    def validate_basic!
+      BufferPreparation.new(self, @signal_shape, @kernel_shape).basic!
+    end
+
+    def fft_buffers
+      @fft_buffers ||= FftBufferPlan.new(self, @signal_shape, @kernel_shape)
     end
 
     private

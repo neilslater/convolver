@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'convolver/real_fft_shape'
+require 'convolver/fft_limits'
 
 module Convolver
   # Calculates and validates output, extension, and FFT dimensions.
@@ -18,10 +19,10 @@ module Convolver
       validate_sizes!
     end
 
-    def linear_fft_shape(kernel_shape)
+    def linear_fft_shape(kernel_shape, limits: FftLimits.new)
       return [].freeze if kernel_shape.empty?
 
-      RealFftShape.new(linear_result_shape(kernel_shape), size_max: SIZE_MAX).call
+      RealFftShape.new(linear_result_shape(kernel_shape), size_max: SIZE_MAX, limits:).call
     end
 
     def linear_fft_size(kernel_shape)

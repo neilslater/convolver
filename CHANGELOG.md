@@ -7,12 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-10-04
+
+### Changed
+
+- Require `numo-pocketfft >= 0.7.0` and allow `numo-narray-alt < 0.12`,
+  enabling the NArray 0.11 series.
+
 ### Fixed
 
 - Read the logical values of contiguous signal and kernel slices in direct
   convolution and correlation, including unaligned SSE kernels and scalar views.
 - Retain a representable exact FFT shape when an optional fast candidate exceeds
   the native element limit.
+- Reject unrepresentable FFT buffers and native integer arithmetic before
+  allocation, including preparation, inverse staging and work buffers. Automatic
+  selection retains a safe direct path when FFT exceeds its limits.
 
 ## [3.0.0] - 2026-08-22
 

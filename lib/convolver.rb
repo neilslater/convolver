@@ -36,7 +36,7 @@ module Convolver
     #   shared across axes or one per axis (default: 0)
     # @return [Numo::SFloat] mathematical convolution result
     # @raise [ArgumentError] if inputs or options are invalid
-    # @raise [RangeError] if planned dimensions exceed native limits
+    # @raise [RangeError] if planned dimensions, buffers or FFT arithmetic exceed native limits
     def convolve(signal, kernel, mode: :valid, boundary: :constant,
                  fill_value: UNSPECIFIED_FILL, origin: 0)
       execution(:convolution, signal, kernel, mode:, boundary:, fill_value:, origin:).automatic(self)
