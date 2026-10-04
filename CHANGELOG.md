@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Require `numo-pocketfft >= 0.7.0` and allow `numo-narray-alt < 0.12`,
+  enabling the NArray 0.11 series.
+
 ### Fixed
 
 - Read the logical values of contiguous signal and kernel slices in direct
