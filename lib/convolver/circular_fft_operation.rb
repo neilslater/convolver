@@ -5,13 +5,13 @@ module Convolver
   # @private
   class CircularFftOperation
     def initialize(operation, signal, kernel, plan)
+      @real_axis = plan.fft_buffers.real_axis
       @operation = operation
       @signal = Numo::DFloat.cast(signal)
       @kernel = fold_kernel(Numo::DFloat.cast(kernel), signal.shape, plan.anchors)
     end
 
     def call
-      real_axis = self.class.real_axis(signal.shape)
       return complex_product unless real_axis
 
       real_product(real_axis)
@@ -28,7 +28,7 @@ module Convolver
 
     private
 
-    attr_reader :operation, :signal, :kernel
+    attr_reader :operation, :signal, :kernel, :real_axis
 
     def real_product(real_axis)
       final_axis = signal.ndim - 1

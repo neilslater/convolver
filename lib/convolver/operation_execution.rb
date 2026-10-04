@@ -37,12 +37,13 @@ module Convolver
       return invoke(receiver, :basic) if plan.extended_size < 1000
 
       direct_time = invoke(receiver, :predict_basic)
-      return invoke(receiver, :fft) if invoke(receiver, :predict_fft) < FFT_SPEEDUP_MARGIN * direct_time
+      return invoke(receiver, :fft) if automatic_fft_time(receiver) < FFT_SPEEDUP_MARGIN * direct_time
 
       invoke(receiver, :basic)
     end
 
     def basic
+      plan.validate_basic!
       extended_signal = plan.extend_signal(signal)
       return Convolver.send(:correlate_basic_valid, extended_signal, kernel) if operation == :correlation
 
@@ -50,7 +51,7 @@ module Convolver
     end
 
     def fft
-      plan
+      plan.fft_buffers
       return Numo::SFloat.cast(signal) * Numo::SFloat.cast(kernel) if signal.ndim.zero?
 
       fft_operation.call
@@ -61,6 +62,7 @@ module Convolver
     end
 
     def basic_time
+      plan.validate_basic!
       calculation_cost = direct_operation_cost * plan.result_size * kernel.size
       extension_cost = plan.valid? ? 0.0 : EXTENSION_COST * plan.extended_size
       calculation_cost + extension_cost
@@ -88,6 +90,12 @@ module Convolver
       return CircularFftOperation.new(operation, signal, kernel, plan) if plan.wrap?
 
       LinearFftOperation.new(operation, plan.extend_signal(signal), kernel, plan)
+    end
+
+    def automatic_fft_time(receiver)
+      invoke(receiver, :predict_fft)
+    rescue FftUnavailable
+      Float::INFINITY
     end
 
     def direct_operation_cost

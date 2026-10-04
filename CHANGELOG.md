@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   convolution and correlation, including unaligned SSE kernels and scalar views.
 - Retain a representable exact FFT shape when an optional fast candidate exceeds
   the native element limit.
+- Reject unrepresentable FFT buffers and native integer arithmetic before
+  allocation, including preparation, inverse staging and work buffers. Automatic
+  selection retains a safe direct path when FFT exceeds its limits.
 
 ## [3.0.0] - 2026-08-22
 

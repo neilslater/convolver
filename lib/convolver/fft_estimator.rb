@@ -16,6 +16,7 @@ module Convolver
       @signal = signal
       @kernel = kernel
       @plan = plan
+      @buffers = plan.fft_buffers
     end
 
     def call
@@ -29,7 +30,7 @@ module Convolver
 
     private
 
-    attr_reader :operation, :signal, :kernel, :plan
+    attr_reader :operation, :signal, :kernel, :plan, :buffers
 
     def dimensions
       return linear_dimensions unless plan.wrap?
@@ -38,20 +39,13 @@ module Convolver
     end
 
     def circular_dimensions
-      real_axis = CircularFftOperation.real_axis(signal.shape)
-      spectrum_size = real_axis ? real_spectrum_size(real_axis) : signal.size
-      [signal.size, spectrum_size, transform_coefficient(real_axis), moved_size(real_axis)]
+      real_axis = buffers.real_axis
+      [buffers.transform_size, buffers.spectrum_size, transform_coefficient(real_axis), moved_size(real_axis)]
     end
 
     def linear_dimensions
-      [plan.linear_fft_size(kernel.shape), plan.linear_spectrum_size(kernel.shape),
+      [buffers.transform_size, buffers.spectrum_size,
        cost_for(REAL_FFT_COST), 0]
-    end
-
-    def real_spectrum_size(real_axis)
-      signal.shape.each_with_index.reduce(1) do |size, (axis_size, axis)|
-        size * (axis == real_axis ? (axis_size / 2) + 1 : axis_size)
-      end
     end
 
     def preparation_size(transform_size)

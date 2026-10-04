@@ -8,7 +8,7 @@ module Convolver
       @operation = operation
       @signal = signal
       @kernel = kernel
-      @transform_shape = plan.linear_fft_shape(kernel.shape)
+      @transform_shape = plan.fft_buffers.transform_shape
     end
 
     def call

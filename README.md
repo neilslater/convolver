@@ -153,6 +153,13 @@ Convolver.predict_correlate_basic_time(signal, kernel, mode: :same, boundary: :n
 Convolver.predict_correlate_fft_time(signal, kernel, mode: :same, boundary: :wrap)
 ```
 
+Calculations and estimators reject unrepresentable buffer sizes with `RangeError`
+before allocation. FFT planning also checks conservative PocketFFT integer and
+work-buffer limits, including full complex staging for real inverse transforms.
+Automatic selection uses direct calculation when FFT exceeds its limits and the
+direct path remains valid. These checks do not reserve memory; ordinary allocator
+exhaustion still raises `NoMemoryError`.
+
 ### Migrating from version 2
 
 Version 2's `convolve*` methods calculated cross-correlation. Version 3 corrects

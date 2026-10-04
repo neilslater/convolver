@@ -44,5 +44,19 @@ module Convolver
       expect { described_class.new([3], size_max: 3).call }
         .to raise_error(RangeError, 'FFT shape exceeds native implementation limit')
     end
+
+    it 'rejects unsafe axes before costing or prime factorization', :aggregate_failures do
+      planner = described_class.new([134_217_728, 2], size_max: BufferLimits::SIZE_MAX, limits: FftLimits.new)
+      allow(planner).to receive(:transform_cost).and_call_original
+
+      expect { planner.call }.to raise_error(FftUnavailable, /FFT axis arithmetic/)
+      expect(planner).not_to have_received(:transform_cost)
+    end
+
+    it 'distinguishes unavailable FFT element products for automatic fallback' do
+      planner = described_class.new([8, 10], size_max: 72, limits: FftLimits.new)
+
+      expect { planner.call }.to raise_error(FftUnavailable, 'FFT shape exceeds native implementation limit')
+    end
   end
 end
