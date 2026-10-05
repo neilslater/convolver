@@ -7,6 +7,16 @@ describe Convolver do
   # Call each private primitive directly to exercise its independent checks.
   %i[convolve_basic_valid correlate_basic_valid].each do |method_name|
     describe ".#{method_name}" do
+      it 'rejects mismatched floating types at the native boundary' do
+        expect { described_class.send(method_name, Numo::SFloat[1], Numo::DFloat[1]) }
+          .to raise_error(ArgumentError, /matching SFloat or DFloat/)
+      end
+
+      it 'rejects unsupported native input classes' do
+        expect { described_class.send(method_name, Numo::Int32[1], Numo::Int32[1]) }
+          .to raise_error(ArgumentError, /matching SFloat or DFloat/)
+      end
+
       it 'rejects a signal that is not a Numo array' do
         expect { described_class.send(method_name, [1.0], NArray[1.0]) }
           .to raise_error(ArgumentError, 'signal and kernel must be Numo::NArray values')

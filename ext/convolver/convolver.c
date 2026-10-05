@@ -4,18 +4,18 @@
 
 #include "correlate_raw.h"
 #include "convolve_raw.h"
+#include "fft_shape.h"
 
 static VALUE mConvolver;
 
 /* Contiguous views share their backing storage but start at a byte offset. */
-static const float *logical_pointer_for_read(VALUE value) {
-  return (const float *)(na_get_pointer_for_read(value) + na_get_offset(value));
+static const void *logical_pointer_for_read(VALUE value) {
+  return (const void *)(na_get_pointer_for_read(value) + na_get_offset(value));
 }
 
-static VALUE contiguous_sfloat(VALUE value) {
+static VALUE contiguous_float(VALUE value) {
   narray_t *narray;
 
-  value = rb_funcall(numo_cSFloat, rb_intern("cast"), 1, value);
   GetNArray(value, narray);
   /* A scalar has no strides; Numo's contiguous check requires an axis. */
   if (narray->ndim > 0 && !RTEST(na_check_contiguous(value))) {
@@ -54,8 +54,13 @@ static VALUE convolver_basic_valid(VALUE signal, VALUE kernel, enum convolver_op
     rb_raise(rb_eArgError, "signal and kernel must be Numo::NArray values");
   }
 
-  signal_value = contiguous_sfloat(signal);
-  kernel_value = contiguous_sfloat(kernel);
+  VALUE dtype = CLASS_OF(signal);
+  if ((dtype != numo_cSFloat && dtype != numo_cDFloat) || CLASS_OF(kernel) != dtype) {
+    rb_raise(rb_eArgError, "native inputs must have matching SFloat or DFloat dtypes");
+  }
+
+  signal_value = contiguous_float(signal);
+  kernel_value = contiguous_float(kernel);
   GetNArray(signal_value, signal_narray);
   GetNArray(kernel_value, kernel_narray);
 
@@ -82,19 +87,35 @@ static VALUE convolver_basic_valid(VALUE signal, VALUE kernel, enum convolver_op
     numo_result_shape[rank - i - 1] = (size_t)result_shape[i];
   }
 
-  result_value = nary_new(numo_cSFloat, rank, numo_result_shape);
-  if (operation == CONVOLVER_CORRELATION) {
-    correlate_raw(
-      rank, signal_shape, logical_pointer_for_read(signal_value),
-      rank, kernel_shape, logical_pointer_for_read(kernel_value),
-      rank, result_shape, (float *)na_get_pointer_for_write(result_value)
-    );
+  result_value = nary_new(dtype, rank, numo_result_shape);
+  if (dtype == numo_cSFloat) {
+    if (operation == CONVOLVER_CORRELATION) {
+      correlate_raw(
+        rank, signal_shape, logical_pointer_for_read(signal_value),
+        rank, kernel_shape, logical_pointer_for_read(kernel_value),
+        rank, result_shape, (float *)na_get_pointer_for_write(result_value)
+      );
+    } else {
+      convolve_raw(
+        rank, signal_shape, logical_pointer_for_read(signal_value),
+        rank, kernel_shape, logical_pointer_for_read(kernel_value),
+        rank, result_shape, (float *)na_get_pointer_for_write(result_value)
+      );
+    }
   } else {
-    convolve_raw(
-      rank, signal_shape, logical_pointer_for_read(signal_value),
-      rank, kernel_shape, logical_pointer_for_read(kernel_value),
-      rank, result_shape, (float *)na_get_pointer_for_write(result_value)
-    );
+    if (operation == CONVOLVER_CORRELATION) {
+      correlate_raw_double(
+        rank, signal_shape, logical_pointer_for_read(signal_value),
+        rank, kernel_shape, logical_pointer_for_read(kernel_value),
+        rank, result_shape, (double *)na_get_pointer_for_write(result_value)
+      );
+    } else {
+      convolve_raw_double(
+        rank, signal_shape, logical_pointer_for_read(signal_value),
+        rank, kernel_shape, logical_pointer_for_read(kernel_value),
+        rank, result_shape, (double *)na_get_pointer_for_write(result_value)
+      );
+    }
   }
 
   return result_value;
@@ -107,7 +128,7 @@ static VALUE convolver_basic_valid(VALUE signal, VALUE kernel, enum convolver_op
  * @overload correlate_basic_valid(signal, kernel)
  *   @param signal [Numo::NArray] input values
  *   @param kernel [Numo::NArray] correlation kernel
- *   @return [Numo::SFloat] valid cross-correlation result
+ *   @return [Numo::SFloat, Numo::DFloat] valid cross-correlation result
  */
 static VALUE convolver_correlate_basic_valid(VALUE self, VALUE signal, VALUE kernel) {
   (void)self;
@@ -121,7 +142,7 @@ static VALUE convolver_correlate_basic_valid(VALUE self, VALUE signal, VALUE ker
  * @overload convolve_basic_valid(signal, kernel)
  *   @param signal [Numo::NArray] input values
  *   @param kernel [Numo::NArray] convolution kernel
- *   @return [Numo::SFloat] valid mathematical convolution result
+ *   @return [Numo::SFloat, Numo::DFloat] valid mathematical convolution result
  */
 static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kernel) {
   (void)self;
@@ -130,6 +151,7 @@ static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kern
 
 void Init_convolver(void) {
   mConvolver = rb_define_module("Convolver");
+  convolver_init_fft_shape(mConvolver);
   rb_define_singleton_method(mConvolver, "correlate_basic_valid", convolver_correlate_basic_valid, 2);
   rb_define_singleton_method(mConvolver, "convolve_basic_valid", convolver_convolve_basic_valid, 2);
 }

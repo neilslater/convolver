@@ -5,7 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.0.0] - 2026-10-05
+
+### Added
+
+- Optional `dtype: Numo::SFloat` or `dtype: Numo::DFloat` on all calculation
+  and estimator methods, with matching result types and genuine native double
+  arithmetic. Omitted or nil dtype selects precision from both operands.
+
+### Changed
+
+- **Breaking, v4.0.0:** Automatically promote SFloat and 8/16-bit integer
+  inputs to SFloat, and DFloat and 32/64-bit integer inputs to DFloat; the
+  wider floating candidate wins independently of operand order.
+- **Breaking:** Reject Bit, RObject, complex arrays and custom NArray subclasses,
+  including with an explicit floating dtype. Integer results are not supported.
+- Reuse a single operation plan during automatic dispatch and account for
+  selected dtype and input conversion in cost estimates and buffer checks.
+- Bound FFT shape search in native code and skip FFT planning when a cheap
+  cost bound already favors direct execution. Recalibrate selection for FFT
+  setup, long direct kernels, boundary indexing and periodic kernel folding.
+
+### Fixed
+
+- Cast both inputs and fill to the resolved dtype before boundary preparation,
+  periodic folding and arithmetic, consistently across direct and FFT paths.
+  `dtype: Numo::SFloat` selects single-precision inputs/results, but does not
+  guarantee bit-for-bit version 3 results. FFT work remains double precision.
 
 ## [3.0.1] - 2026-10-04
 
@@ -133,7 +159,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the native extension to use the maintained Numo C API and removed the
   legacy untyped-data compatibility code.
 
-[Unreleased]: https://github.com/neilslater/convolver/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/neilslater/convolver/compare/v3.0.1...HEAD
 [3.0.0]: https://github.com/neilslater/convolver/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/neilslater/convolver/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/neilslater/convolver/compare/v1.0.0...v1.0.1

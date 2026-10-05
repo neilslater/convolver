@@ -5,6 +5,7 @@ module Convolver
   # @private
   class CircularFftOperation
     def initialize(operation, signal, kernel, plan)
+      @dtype = plan.dtype
       @real_axis = plan.fft_buffers.real_axis
       @operation = operation
       @signal = Numo::DFloat.cast(signal)
@@ -28,7 +29,7 @@ module Convolver
 
     private
 
-    attr_reader :operation, :signal, :kernel, :real_axis
+    attr_reader :operation, :signal, :kernel, :real_axis, :dtype
 
     def real_product(real_axis)
       final_axis = signal.ndim - 1
@@ -36,7 +37,7 @@ module Convolver
       prepared_kernel = prepare_real_operand(kernel, real_axis, final_axis)
       result = real_spectrum_product(prepared_signal, prepared_kernel)
       result = result.swapaxes(real_axis, final_axis) unless real_axis == final_axis
-      Numo::SFloat.cast(result)
+      dtype.cast(result)
     end
 
     def prepare_real_operand(value, real_axis, final_axis)
@@ -55,7 +56,7 @@ module Convolver
       kernel_spectrum = Numo::Pocketfft.fftn(kernel)
       kernel_spectrum.inplace.conj if operation == :correlation
       result = Numo::Pocketfft.ifftn(signal_spectrum.inplace * kernel_spectrum).real
-      Numo::SFloat.cast(result)
+      dtype.cast(result)
     end
 
     def fold_kernel(source, signal_shape, anchors)

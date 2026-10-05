@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'forwardable'
+require 'convolver/operation_dtype'
 require 'convolver/operation_options'
 require 'convolver/operation_shapes'
 require 'convolver/signal_extension'
@@ -18,13 +19,16 @@ module Convolver
   class OperationPlan
     extend Forwardable
 
-    def_delegators :options, :operation, :mode, :boundary, :fill_value, :origins, :anchors
+    def_delegators :options, :operation, :mode, :boundary, :fill_value, :origins, :anchors, :dtype
     def_delegators :shapes, :padding_before, :padding_after, :result_shape,
                    :extended_shape, :result_size, :extended_size, :linear_fft_shape,
                    :linear_fft_size, :linear_spectrum_size
 
-    def initialize(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
-      @options = OperationOptions.new(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
+    attr_reader :conversion_size
+
+    def initialize(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:, dtype: nil)
+      @options = OperationOptions.new(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:, dtype:)
+      @conversion_size = [signal, kernel].sum { |input| input.instance_of?(self.dtype) ? 0 : input.size }
       @signal_shape = signal.shape.freeze
       @kernel_shape = kernel.shape.freeze
       @shapes = OperationShapes.new(
@@ -47,7 +51,10 @@ module Convolver
     end
 
     def validate_basic!
+      return if @basic_validated
+
       BufferPreparation.new(self, @signal_shape, @kernel_shape).basic!
+      @basic_validated = true
     end
 
     def fft_buffers

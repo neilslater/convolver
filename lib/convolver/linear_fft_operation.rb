@@ -5,6 +5,7 @@ module Convolver
   # @private
   class LinearFftOperation
     def initialize(operation, signal, kernel, plan)
+      @dtype = plan.dtype
       @operation = operation
       @signal = signal
       @kernel = kernel
@@ -15,12 +16,13 @@ module Convolver
       signal_padded = zero_padded(signal)
       kernel_padded = zero_padded(kernel)
       full_result = real_spectrum_product(signal_padded, kernel_padded)
-      Numo::SFloat.cast(full_result[*valid_ranges])
+      cropped = full_result[*valid_ranges]
+      dtype == Numo::DFloat ? cropped.dup : dtype.cast(cropped)
     end
 
     private
 
-    attr_reader :operation, :signal, :kernel, :transform_shape
+    attr_reader :operation, :signal, :kernel, :transform_shape, :dtype
 
     def zero_padded(value)
       Numo::DFloat.zeros(*transform_shape).tap do |padded|

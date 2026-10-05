@@ -7,7 +7,7 @@ module Convolver
     let(:limits) { BufferLimits.new(byte_max: 64) }
     let(:plan) do
       instance_double(OperationPlan, result_size: 1, extended_size: 16, extended_shape: [16],
-                                     valid?: false, wrap?: false, boundary: :nearest)
+                                     valid?: false, wrap?: false, boundary: :nearest, dtype: Numo::SFloat)
     end
 
     it 'checks boundary index bytes separately from numeric extension bytes' do
@@ -30,6 +30,18 @@ module Convolver
 
       expect { described_class.new(plan, [10], [1], limits:).fft! }
         .to raise_error(FftUnavailable, /circular signal preparation/)
+    end
+
+    it 'checks double result bytes rather than only the element count' do
+      allow(plan).to receive_messages(dtype: Numo::DFloat, result_size: 9)
+      expect { described_class.new(plan, [1], [1], limits:).basic! }
+        .to raise_error(RangeError, /result buffer/)
+    end
+
+    it 'checks double extension bytes before constructing the signal' do
+      allow(plan).to receive(:dtype).and_return(Numo::DFloat)
+      expect { described_class.new(plan, [1], [1], limits:).basic! }
+        .to raise_error(RangeError, /extended signal buffer/)
     end
   end
 end

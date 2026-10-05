@@ -35,15 +35,15 @@ module Convolver
     attr_reader :plan, :signal_size, :kernel_size, :limits
 
     def common!
-      limits.buffer!(plan.result_size, 4, 'result buffer')
-      limits.buffer!(signal_size, 4, 'signal conversion buffer')
-      limits.buffer!(kernel_size, 4, 'kernel conversion buffer')
+      limits.buffer!(plan.result_size, plan.dtype::ELEMENT_BYTE_SIZE, 'result buffer')
+      limits.buffer!(signal_size, plan.dtype::ELEMENT_BYTE_SIZE, 'signal conversion buffer')
+      limits.buffer!(kernel_size, plan.dtype::ELEMENT_BYTE_SIZE, 'kernel conversion buffer')
     end
 
     def extension!
       return if plan.valid?
 
-      limits.buffer!(plan.extended_size, 4, 'extended signal buffer')
+      limits.buffer!(plan.extended_size, plan.dtype::ELEMENT_BYTE_SIZE, 'extended signal buffer')
       return if plan.boundary == :constant
 
       plan.extended_shape.each do |length|

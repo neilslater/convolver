@@ -11,7 +11,7 @@ module Convolver
     end
 
     def call(signal)
-      source = Numo::SFloat.cast(signal)
+      source = signal
       return constant_extension(source) if boundary == :constant
 
       source[*extension_indices]
@@ -22,7 +22,7 @@ module Convolver
     attr_reader :shapes, :boundary, :fill_value
 
     def constant_extension(source)
-      extended = Numo::SFloat.new(*shapes.extended_shape).fill(fill_value)
+      extended = source.class.new(*shapes.extended_shape).fill(fill_value)
       ranges = source.shape.zip(shapes.padding_before).map do |signal_size, before|
         before...(before + signal_size)
       end

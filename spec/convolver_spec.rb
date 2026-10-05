@@ -22,14 +22,14 @@ describe Convolver do
       end
 
       context 'with small inputs' do
-        before { exercise_algorithm_selection(methods, 50, 10) }
+        before { exercise_algorithm_selection(methods, 50, 3) }
 
         it 'chooses the direct implementation' do
-          expect(described_class).to have_received(methods.fetch(:basic)).once
+          expect(described_class).to have_received("#{methods.fetch(:basic)}_valid").once
         end
 
         it 'does not choose the FFT implementation' do
-          expect(described_class).not_to have_received(methods.fetch(:fft))
+          expect(Numo::Pocketfft).not_to have_received(:rfftn)
         end
       end
 
@@ -37,11 +37,11 @@ describe Convolver do
         before { exercise_algorithm_selection(methods, 500, 100) }
 
         it 'chooses the FFT implementation' do
-          expect(described_class).to have_received(methods.fetch(:fft)).once
+          expect(Numo::Pocketfft).to have_received(:rfftn).twice
         end
 
         it 'does not choose the direct implementation' do
-          expect(described_class).not_to have_received(methods.fetch(:basic))
+          expect(described_class).not_to have_received("#{methods.fetch(:basic)}_valid")
         end
       end
 
@@ -101,8 +101,8 @@ describe Convolver do
   end
 
   def exercise_algorithm_selection(methods, signal_size, kernel_size)
-    allow(described_class).to receive(methods.fetch(:basic))
-    allow(described_class).to receive(methods.fetch(:fft))
+    allow(described_class).to receive("#{methods.fetch(:basic)}_valid").and_call_original
+    allow(Numo::Pocketfft).to receive(:rfftn).and_call_original
     signal = random_square(signal_size)
     kernel = random_square(kernel_size)
     described_class.public_send(methods.fetch(:method), signal, kernel)

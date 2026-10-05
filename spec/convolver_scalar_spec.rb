@@ -12,18 +12,18 @@ describe Convolver do
     end
   end
 
-  { predict_convolve_fft_time: 0, predict_correlate_fft_time: 2e-10 }.each do |method_name, correlation_cost|
-    it "estimates a scalar linear transform as one element through .#{method_name}" do
+  %i[predict_convolve_fft_time predict_correlate_fft_time].each do |method_name|
+    it "estimates the scalar shortcut below a full transform through .#{method_name}" do
       scalar = described_class.public_send(method_name, NArray.cast(2), NArray.cast(3))
-      expected = 1.5e-4 + (1.45e-9 * Math.log(2)) + 2e-9 + correlation_cost
-      expect(scalar).to be_within(1e-15).of(expected)
+      transform = described_class.public_send(method_name, NArray.ones(1024), NArray.ones(3))
+      expect(scalar).to be_between(0, transform).exclusive
     end
 
-    it "estimates a scalar circular transform through .#{method_name}" do
+    it "does not charge scalar calls for periodic folding through .#{method_name}" do
+      linear = described_class.public_send(method_name, NArray.cast(2), NArray.cast(3))
       scalar = described_class.public_send(method_name, NArray.cast(2), NArray.cast(3),
                                            mode: :same, boundary: :wrap)
-      expected = 1.5e-4 + (2.8e-9 * Math.log(2)) + 2e-9 + correlation_cost
-      expect(scalar).to be_within(1e-15).of(expected)
+      expect(scalar).to eq(linear)
     end
   end
 end

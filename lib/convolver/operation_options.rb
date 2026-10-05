@@ -8,21 +8,20 @@ module Convolver
     MODES = %i[valid same full].freeze
     BOUNDARIES = %i[constant nearest reflect mirror wrap].freeze
 
-    attr_reader :operation, :mode, :boundary, :fill_value, :origins, :anchors
+    attr_reader :operation, :mode, :boundary, :fill_value, :origins, :anchors, :dtype
 
-    def initialize(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
+    def initialize(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:, dtype:)
+      @dtype = OperationDtype.resolve(signal, kernel, dtype)
       validate_inputs!(signal, kernel)
       validate_vocabulary!(operation, mode, boundary)
       assign_options(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
       validate_combinations!(signal.shape, kernel.shape)
+      @fill_value = OperationDtype.cast_fill(@fill_value, @dtype)
     end
 
     private
 
     def validate_inputs!(signal, kernel)
-      unless signal.is_a?(Numo::NArray) && kernel.is_a?(Numo::NArray)
-        raise ArgumentError, 'signal and kernel must be Numo::NArray values'
-      end
       raise ArgumentError, 'signal and kernel must not be empty' if signal.empty? || kernel.empty?
       raise ArgumentError, 'signal and kernel must have equal rank' unless signal.ndim == kernel.ndim
       raise ArgumentError, "maximum supported rank is #{MAX_RANK}" if signal.ndim > MAX_RANK

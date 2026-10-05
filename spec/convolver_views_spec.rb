@@ -5,7 +5,7 @@ require 'native_view_fixtures'
 
 describe Convolver do
   shared_examples 'logical view values' do |operation, mode|
-    let(:sources) { NativeViewFixtures.backing_arrays }
+    let(:sources) { NativeViewFixtures.backing_arrays(dtype) }
     let(:signal) { views.first }
     let(:kernel) { views.last }
     let(:expected) { OperationReference.calculate(operation, signal, kernel, mode:) }
@@ -34,10 +34,12 @@ describe Convolver do
     end
   end
 
-  OperationReference::OPERATIONS.product(%i[valid same full]).each do |operation, mode|
+  OperationReference::OPERATIONS.product(%i[valid same full],
+                                         [Numo::SFloat, Numo::DFloat]).each do |operation, mode, type|
     layouts = %i[signal_offset kernel_offset both_offsets zero_offset reversed indexed]
     layouts.product([3, 4, 5, 8]).each do |layout, length|
-      context "with #{layout}, kernel length #{length}, #{operation}, and #{mode} mode" do
+      context "with #{type} #{layout}, kernel length #{length}, #{operation}, and #{mode} mode" do
+        let(:dtype) { type }
         let(:views) { NativeViewFixtures.views(layout, *sources, length) }
 
         it_behaves_like 'logical view values', operation, mode
@@ -45,18 +47,12 @@ describe Convolver do
     end
 
     %i[multidimensional transposed scalar].each do |layout|
-      context "with #{layout} views, #{operation}, and #{mode} mode" do
+      context "with #{type} #{layout} views, #{operation}, and #{mode} mode" do
+        let(:dtype) { type }
         let(:views) { NativeViewFixtures.shaped_views(layout, *sources) }
 
         it_behaves_like 'logical view values', operation, mode
       end
-    end
-
-    context "with double precision offset views, #{operation}, and #{mode} mode" do
-      let(:sources) { NativeViewFixtures.backing_arrays(Numo::DFloat) }
-      let(:views) { NativeViewFixtures.views(:both_offsets, *sources, 5) }
-
-      it_behaves_like 'logical view values', operation, mode
     end
   end
 

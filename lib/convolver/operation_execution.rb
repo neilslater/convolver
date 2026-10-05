@@ -4,26 +4,12 @@ module Convolver
   # Coordinates validation, implementation selection, and one operation family.
   # @private
   class OperationExecution
-    DIRECT_OPERATION_COST = { 1 => 6.8e-10, 2 => 5.9e-10, 3 => 4.5e-10 }.freeze
-    EXTENSION_COST = 1.0e-9
+    DIRECT_OPERATION_COST = { 1 => 3.8e-10, 2 => 5.9e-10, 3 => 4.5e-10 }.freeze
+    DOUBLE_OPERATION_COST = { 1 => 3.9e-10, 2 => 6.0e-10, 3 => 4.6e-10 }.freeze
+    LARGE_KERNEL_COST = 6.5e-10
     FFT_SPEEDUP_MARGIN = 0.8
 
-    METHODS = {
-      correlation: {
-        basic: :correlate_basic,
-        fft: :correlate_fft,
-        predict_basic: :predict_correlate_basic_time,
-        predict_fft: :predict_correlate_fft_time
-      },
-      convolution: {
-        basic: :convolve_basic,
-        fft: :convolve_fft,
-        predict_basic: :predict_convolve_basic_time,
-        predict_fft: :predict_convolve_fft_time
-      }
-    }.freeze
-
-    def initialize(operation, signal, kernel, mode:, boundary:, fill_value:, origin:)
+    def initialize(operation, signal, kernel, mode:, boundary:, fill_value:, origin:, dtype:)
       @operation = operation
       @signal = signal
       @kernel = kernel
@@ -31,28 +17,31 @@ module Convolver
       @boundary = boundary
       @fill_value = fill_value
       @origin = origin
+      @dtype = dtype
     end
 
-    def automatic(receiver)
-      return invoke(receiver, :basic) if plan.extended_size < 1000
+    def automatic
+      return basic if plan.result_shape.empty?
 
-      direct_time = invoke(receiver, :predict_basic)
-      return invoke(receiver, :fft) if automatic_fft_time(receiver) < FFT_SPEEDUP_MARGIN * direct_time
+      threshold = FFT_SPEEDUP_MARGIN * basic_time
+      return basic if FftCost.lower_bound(plan, kernel.shape, threshold:) >= threshold
+      return fft if automatic_fft_time < threshold
 
-      invoke(receiver, :basic)
+      basic
     end
 
     def basic
       plan.validate_basic!
-      extended_signal = plan.extend_signal(signal)
-      return Convolver.send(:correlate_basic_valid, extended_signal, kernel) if operation == :correlation
+      prepared_signal, prepared_kernel = prepared_inputs
+      extended_signal = plan.extend_signal(prepared_signal)
+      return Convolver.send(:correlate_basic_valid, extended_signal, prepared_kernel) if operation == :correlation
 
-      Convolver.send(:convolve_basic_valid, extended_signal, kernel)
+      Convolver.send(:convolve_basic_valid, extended_signal, prepared_kernel)
     end
 
     def fft
       plan.fft_buffers
-      return Numo::SFloat.cast(signal) * Numo::SFloat.cast(kernel) if signal.ndim.zero?
+      return prepared_inputs.reduce(:*) if signal.ndim.zero?
 
       fft_operation.call
     end
@@ -64,42 +53,44 @@ module Convolver
     def basic_time
       plan.validate_basic!
       calculation_cost = direct_operation_cost * plan.result_size * kernel.size
-      extension_cost = plan.valid? ? 0.0 : EXTENSION_COST * plan.extended_size
-      calculation_cost + extension_cost
+      calculation_cost + preparation_cost
     end
 
     private
 
-    attr_reader :operation, :signal, :kernel, :mode, :boundary, :fill_value, :origin
+    attr_reader :operation, :signal, :kernel, :mode, :boundary, :fill_value, :origin, :dtype
 
     def plan
-      @plan ||= OperationPlan.new(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:)
+      @plan ||= OperationPlan.new(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:, dtype:)
     end
 
-    def invoke(receiver, method)
-      receiver.public_send(METHODS.fetch(operation).fetch(method), signal, kernel, **public_options)
-    end
-
-    def public_options
-      options = { mode:, boundary:, origin: }
-      options[:fill_value] = fill_value unless fill_value.equal?(UNSPECIFIED_FILL)
-      options
+    def prepared_inputs
+      @prepared_inputs ||= [plan.dtype.cast(signal), plan.dtype.cast(kernel)]
     end
 
     def fft_operation
-      return CircularFftOperation.new(operation, signal, kernel, plan) if plan.wrap?
+      prepared_signal, prepared_kernel = prepared_inputs
+      return CircularFftOperation.new(operation, prepared_signal, prepared_kernel, plan) if plan.wrap?
 
-      LinearFftOperation.new(operation, plan.extend_signal(signal), kernel, plan)
+      LinearFftOperation.new(operation, plan.extend_signal(prepared_signal), prepared_kernel, plan)
     end
 
-    def automatic_fft_time(receiver)
-      invoke(receiver, :predict_fft)
+    def automatic_fft_time
+      fft_time
     rescue FftUnavailable
       Float::INFINITY
     end
 
+    def preparation_cost
+      costs = PreparationCost.new(plan)
+      costs.conversion + costs.extension
+    end
+
     def direct_operation_cost
-      DIRECT_OPERATION_COST.fetch(signal.ndim, DIRECT_OPERATION_COST.values.last)
+      return LARGE_KERNEL_COST if kernel.size > 64 && signal.ndim != 2
+
+      costs = plan.dtype == Numo::DFloat ? DOUBLE_OPERATION_COST : DIRECT_OPERATION_COST
+      costs.fetch(signal.ndim, costs.values.last)
     end
   end
 
