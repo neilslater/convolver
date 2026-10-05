@@ -6,7 +6,7 @@ describe Convolver do
   describe 'circular FFT cost estimates' do
     it 'accounts for a real transform on the final even axis' do
       # Twelve spatial elements, one kernel element, and no axis movement.
-      expected = 1.5e-4 + (9e-10 * 12 * Math.log(12)) + (1e-9 * 13)
+      expected = 1.5e-4 + (9e-10 * 12 * Math.log(12)) + (1e-9 * 13) + (5e-10 * 12)
       expect(circular_estimate(:predict_convolve_fft_time, [3, 4])).to be_within(1e-15).of(expected)
     end
 

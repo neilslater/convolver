@@ -155,7 +155,7 @@ describe Convolver do
     it 'exposes the keyword API from every calculation and estimator method' do
       expected_parameters = [
         %i[req signal], %i[req kernel], %i[key mode], %i[key boundary],
-        %i[key fill_value], %i[key origin]
+        %i[key fill_value], %i[key origin], %i[key dtype]
       ]
       parameters = OperationReference::ENTRY_POINTS.map { |method_name| described_class.method(method_name).parameters }
       expect(parameters).to all(eq(expected_parameters))

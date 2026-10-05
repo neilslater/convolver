@@ -29,7 +29,7 @@ module OperationReference
     end
 
     def call
-      result = Numo::SFloat.zeros(*result_shape)
+      result = Numo::DFloat.zeros(*result_shape)
       OperationReference.coordinates(result_shape).each do |output_coordinate|
         result[*output_coordinate] = result_at(output_coordinate)
       end

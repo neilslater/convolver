@@ -9,6 +9,8 @@ module Convolver
     FIXED_COST = 1.5e-4
     PREPARATION_COST = 1.0e-9
     AXIS_MOVE_COST = 1.6e-9
+    CONVERSION_COST = 7.5e-10
+    RESULT_COST = 5.0e-10
     CORRELATION_COST = 2.0e-10
 
     def initialize(operation, signal, kernel, plan)
@@ -24,8 +26,7 @@ module Convolver
       transform_cost = coefficient * transform_size * Math.log([transform_size, 2].max)
       preparation_cost = PREPARATION_COST * preparation_size(transform_size)
       axis_move_cost = AXIS_MOVE_COST * moved_size
-      correlation_cost = operation == :correlation ? CORRELATION_COST * spectrum_size : 0.0
-      FIXED_COST + transform_cost + preparation_cost + axis_move_cost + correlation_cost
+      FIXED_COST + transform_cost + preparation_cost + axis_move_cost + extra_cost(spectrum_size)
     end
 
     private
@@ -48,10 +49,25 @@ module Convolver
        cost_for(REAL_FFT_COST), 0]
     end
 
+    def extra_cost(spectrum_size)
+      correlation_cost = operation == :correlation ? CORRELATION_COST * spectrum_size : 0.0
+      correlation_cost + (CONVERSION_COST * plan.conversion_size) + result_cost
+    end
+
+    def result_cost
+      RESULT_COST * plan.result_size * (plan.dtype::ELEMENT_BYTE_SIZE / 4)
+    end
+
     def preparation_size(transform_size)
-      extension_size = plan.valid? || plan.wrap? ? 0 : plan.extended_size
+      extension_size = extension_elements
       working_size = plan.wrap? ? signal.size + kernel.size : 2 * transform_size
       extension_size + working_size
+    end
+
+    def extension_elements
+      return 0 if plan.valid? || plan.wrap?
+
+      plan.extended_size * (plan.dtype::ELEMENT_BYTE_SIZE / 4)
     end
 
     def cost_for(costs)

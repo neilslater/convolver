@@ -57,6 +57,13 @@ module Convolver
       context "with #{operation} common buffer limits" do
         before { watch_allocations }
 
+        it 'checks the resolved double width before casting either input' do
+          inject_limits(byte_max: 7999)
+          expect { described_class.public_send(operation, signal, kernel, dtype: Numo::DFloat, mode: :same) }
+            .to raise_error(RangeError, /result buffer/)
+          expect_no_allocations
+        end
+
         %w[basic fft].each do |algorithm|
           it "checks extension before #{algorithm} preparation" do
             inject_limits(byte_max: 4000)

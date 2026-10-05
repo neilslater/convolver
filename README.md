@@ -53,13 +53,12 @@ convolve(signal, kernel)[n]  = sum_j signal[n - j] * kernel[j]
 
 The formulas apply component-wise to multidimensional arrays. Correlation
 conventionally conjugates the second operand, although Convolver's current
-single-precision real input contract makes conjugation invisible.
+real input contract makes conjugation invisible.
 
 With no keywords, the signal and kernel must have the same rank, the kernel
 must be no larger than the signal in any dimension, and only positions with
-complete overlap are returned. Inputs are converted to single-precision floats
-internally and results are returned as `Numo::SFloat`. Supplying
-`Numo::SFloat` inputs avoids conversion in the direct implementation.
+complete overlap are returned. Both inputs determine the floating result dtype,
+or you can select it explicitly with `dtype:`.
 
 The automatic, direct, and FFT implementations are available for both
 operations:
@@ -82,6 +81,41 @@ Convolver.convolve(signal, kernel,
                    boundary: :reflect,
                    origin: 0)
 ```
+
+### Input and result precision
+
+`dtype:` accepts `Numo::SFloat`, `Numo::DFloat`, or `nil` (automatic, the
+default). Automatic selection maps each input type using this table, then
+chooses DFloat if either input maps to DFloat, otherwise SFloat:
+
+| Input type | Automatic floating type |
+| --- | --- |
+| `SFloat`, `Int8`, `UInt8`, `Int16`, `UInt16` | `Numo::SFloat` |
+| `DFloat`, `Int32`, `UInt32`, `Int64`, `UInt64` | `Numo::DFloat` |
+
+The input type names above are classes in `Numo`. Both operands must be instances
+of these concrete classes. Bit, RObject, complex arrays, custom subclasses and
+ordinary Ruby arrays are rejected, even with an explicit `dtype:`. Integer
+results and complex arithmetic are not supported.
+
+```ruby
+signal = Numo::SFloat[1, 2, 3]
+kernel = Numo::DFloat[0.25, 0.75]
+Convolver.convolve(signal, kernel)                     # DFloat result
+Convolver.convolve(signal, kernel, dtype: Numo::SFloat) # SFloat result
+```
+
+Both inputs are cast to the selected dtype before extension, folding or
+arithmetic. Inputs are never mutated. `fill_value` is cast to this same dtype
+and never promotes the result. Ordinary floating conversion applies, including
+rounding, overflow to infinity and underflow; NaN and infinity are not rejected.
+Non-finite propagation and rounding can differ between algorithms.
+
+Direct products and accumulation use the selected precision. PocketFFT uses
+double-precision working buffers for either result dtype. The returned class
+is independent of algorithm selection. Integer inputs become approximate
+floating computations: DFloat represents every 32-bit integer, but not every
+64-bit integer, and neither dtype guarantees exact integer convolution.
 
 ### Output modes
 
@@ -159,6 +193,15 @@ work-buffer limits, including full complex staging for real inverse transforms.
 Automatic selection uses direct calculation when FFT exceeds its limits and the
 direct path remains valid. These checks do not reserve memory; ordinary allocator
 exhaustion still raises `NoMemoryError`.
+
+### Migrating from version 3
+
+Version 4 changes default result types and values: DFloat and 32/64-bit integer
+inputs now select DFloat. Pass `dtype: Numo::SFloat` to request single-precision
+inputs and results. This retains the version 3 result type, but does not promise
+identical numerical results: version 4 consistently casts both inputs before
+processing, whereas version 3's direct and FFT paths could round differently.
+The input-class restrictions listed above also apply with a dtype override.
 
 ### Migrating from version 2
 
