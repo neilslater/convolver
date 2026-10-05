@@ -4,6 +4,7 @@
 
 #include "correlate_raw.h"
 #include "convolve_raw.h"
+#include "fft_shape.h"
 
 static VALUE mConvolver;
 
@@ -150,6 +151,7 @@ static VALUE convolver_convolve_basic_valid(VALUE self, VALUE signal, VALUE kern
 
 void Init_convolver(void) {
   mConvolver = rb_define_module("Convolver");
+  convolver_init_fft_shape(mConvolver);
   rb_define_singleton_method(mConvolver, "correlate_basic_valid", convolver_correlate_basic_valid, 2);
   rb_define_singleton_method(mConvolver, "convolve_basic_valid", convolver_convolve_basic_valid, 2);
 }

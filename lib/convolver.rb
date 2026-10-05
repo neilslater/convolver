@@ -135,7 +135,7 @@ module Convolver
 
     private
 
-    private :convolve_basic_valid, :correlate_basic_valid
+    private :convolve_basic_valid, :correlate_basic_valid, :fft_fast_shape, :fft_shape_cost
 
     def execution(operation, signal, kernel, mode:, boundary:, fill_value:, origin:, dtype:)
       OperationExecution.new(operation, signal, kernel, mode:, boundary:, fill_value:, origin:, dtype:)

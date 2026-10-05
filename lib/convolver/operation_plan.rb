@@ -51,7 +51,10 @@ module Convolver
     end
 
     def validate_basic!
+      return if @basic_validated
+
       BufferPreparation.new(self, @signal_shape, @kernel_shape).basic!
+      @basic_validated = true
     end
 
     def fft_buffers

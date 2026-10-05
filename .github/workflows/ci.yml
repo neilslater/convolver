@@ -52,6 +52,19 @@ jobs:
       - name: Check public API documentation
         run: bundle exec rake docs:check
 
+      - name: Measure release algorithm selection
+        if: matrix.ruby == '4.0'
+        run: bundle exec ruby -Ilib benchmark/selection.rb > selection-benchmark.json
+
+      - name: Upload selection measurements
+        if: matrix.ruby == '4.0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: selection-benchmark
+          path: selection-benchmark.json
+          if-no-files-found: error
+          retention-days: 14
+
   native-quality:
     name: Native ${{ matrix.check }}
     runs-on: ubuntu-latest

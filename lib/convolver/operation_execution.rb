@@ -6,8 +6,7 @@ module Convolver
   class OperationExecution
     DIRECT_OPERATION_COST = { 1 => 3.8e-10, 2 => 5.9e-10, 3 => 4.5e-10 }.freeze
     DOUBLE_OPERATION_COST = { 1 => 3.9e-10, 2 => 6.0e-10, 3 => 4.6e-10 }.freeze
-    CONVERSION_COST = 7.5e-10
-    EXTENSION_COST = 1.0e-9
+    LARGE_KERNEL_COST = 6.5e-10
     FFT_SPEEDUP_MARGIN = 0.8
 
     def initialize(operation, signal, kernel, mode:, boundary:, fill_value:, origin:, dtype:)
@@ -22,10 +21,11 @@ module Convolver
     end
 
     def automatic
-      return basic if plan.extended_size < 1000
+      return basic if plan.result_shape.empty?
 
-      direct_time = basic_time
-      return fft if automatic_fft_time < FFT_SPEEDUP_MARGIN * direct_time
+      threshold = FFT_SPEEDUP_MARGIN * basic_time
+      return basic if FftCost.lower_bound(plan, kernel.shape, threshold:) >= threshold
+      return fft if automatic_fft_time < threshold
 
       basic
     end
@@ -82,11 +82,13 @@ module Convolver
     end
 
     def preparation_cost
-      extension_size = plan.valid? ? 0 : plan.extended_size * (plan.dtype::ELEMENT_BYTE_SIZE / 4)
-      (EXTENSION_COST * extension_size) + (CONVERSION_COST * plan.conversion_size)
+      costs = PreparationCost.new(plan)
+      costs.conversion + costs.extension
     end
 
     def direct_operation_cost
+      return LARGE_KERNEL_COST if kernel.size > 64 && signal.ndim != 2
+
       costs = plan.dtype == Numo::DFloat ? DOUBLE_OPERATION_COST : DIRECT_OPERATION_COST
       costs.fetch(signal.ndim, costs.values.last)
     end

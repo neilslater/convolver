@@ -4,9 +4,9 @@ require 'helpers'
 
 module Convolver
   describe Convolver do
-    let(:signal) { NArray.ones(1000) }
+    let(:signal) { NArray.ones(4096) }
     let(:estimator) { instance_double(FftEstimator, call: 0.0) }
-    let(:kernel) { NArray.ones(3) }
+    let(:kernel) { NArray.ones(256) }
 
     %i[convolve correlate].each do |operation|
       context "with #{operation} allocation exhaustion" do

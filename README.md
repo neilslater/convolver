@@ -187,6 +187,12 @@ Convolver.predict_correlate_basic_time(signal, kernel, mode: :same, boundary: :n
 Convolver.predict_correlate_fft_time(signal, kernel, mode: :same, boundary: :wrap)
 ```
 
+Estimates are machine-dependent heuristics, including input conversion, boundary
+preparation and periodic kernel folding. Automatic selection avoids FFT planning
+when a cheap lower bound already favors direct calculation. Algorithm choices
+can change as estimates improve; benchmark the explicit methods for workloads
+where the choice matters.
+
 Calculations and estimators reject unrepresentable buffer sizes with `RangeError`
 before allocation. FFT planning also checks conservative PocketFFT integer and
 work-buffer limits, including full complex staging for real inverse transforms.

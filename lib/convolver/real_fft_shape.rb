@@ -39,10 +39,7 @@ module Convolver
     end
 
     def fast_shape(exact_shape)
-      fast_shape = exact_shape.map.with_index do |size, axis|
-        next_fast_size(size, even: axis == exact_shape.length - 1)
-      end
-      fast_shape if fast_shape.all?
+      Convolver.send(:fft_fast_shape, exact_shape, size_max)
     end
 
     def even_final_axis(shape)
@@ -51,64 +48,8 @@ module Convolver
       result.freeze
     end
 
-    def next_fast_size(target, even:)
-      best = nil
-      each_power(5) do |power_of_five|
-        each_power(3, power_of_five) do |power_of_three|
-          candidate = doubled_candidate(power_of_three, target, even)
-          best = candidate if candidate && (!best || candidate < best)
-        end
-      end
-      best
-    end
-
-    def each_power(factor, initial = 1)
-      value = initial
-      loop do
-        yield value
-        break if value > size_max / factor
-
-        value *= factor
-      end
-    end
-
-    def doubled_candidate(initial, target, even)
-      candidate = initial
-      while candidate < target || (even && candidate.odd?)
-        return nil if candidate > size_max / 2
-
-        candidate *= 2
-      end
-      candidate
-    end
-
     def transform_cost(shape)
-      shape.reduce(:*) * shape.sum { |size| Math.log2(size) + large_factor_penalty(size) }
-    end
-
-    def large_factor_penalty(size)
-      prime_factors(size).sum do |factor|
-        factor > 7 ? 1.5 * (Math.log2(factor) - 3) : 0.0
-      end
-    end
-
-    def prime_factors(value)
-      factors = []
-      divisor = 2
-      while divisor * divisor <= value
-        value = extract_factor(value, divisor, factors)
-        divisor += divisor == 2 ? 1 : 2
-      end
-      factors << value if value > 1
-      factors
-    end
-
-    def extract_factor(value, divisor, factors)
-      while (value % divisor).zero?
-        factors << divisor
-        value /= divisor
-      end
-      value
+      Convolver.send(:fft_shape_cost, shape)
     end
 
     def representable?(shape)

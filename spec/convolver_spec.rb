@@ -22,7 +22,7 @@ describe Convolver do
       end
 
       context 'with small inputs' do
-        before { exercise_algorithm_selection(methods, 50, 10) }
+        before { exercise_algorithm_selection(methods, 50, 3) }
 
         it 'chooses the direct implementation' do
           expect(described_class).to have_received("#{methods.fetch(:basic)}_valid").once

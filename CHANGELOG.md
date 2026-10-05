@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   including with an explicit floating dtype. Integer results are not supported.
 - Reuse a single operation plan during automatic dispatch and account for
   selected dtype and input conversion in cost estimates and buffer checks.
+- Bound FFT shape search in native code and skip FFT planning when a cheap
+  cost bound already favors direct execution. Recalibrate selection for FFT
+  setup, long direct kernels, boundary indexing and periodic kernel folding.
 
 ### Fixed
 

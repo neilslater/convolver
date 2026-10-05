@@ -11,6 +11,7 @@ $LOAD_PATH.each do |load_path|
 end
 
 abort 'numo/narray.h not found' unless have_header('numo/narray.h')
+abort 'log2 not found' unless have_func('log2', 'math.h') || have_library('m', 'log2', 'math.h')
 
 if RUBY_PLATFORM.match?(/mswin|cygwin|mingw/)
   $LOAD_PATH.each do |load_path|

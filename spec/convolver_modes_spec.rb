@@ -203,12 +203,12 @@ describe Convolver do
         .to be > described_class.predict_convolve_fft_time(signal, kernel, mode: :same)
     end
 
-    it 'estimates periodic transforms below equivalent linear transforms' do
+    it 'accounts for periodic folding even when the transform itself is small' do
       signal = NArray.ones(9)
-      kernel = NArray.ones(5)
+      kernel = NArray.ones(129)
       linear = described_class.predict_convolve_fft_time(signal, kernel, mode: :same)
       periodic = described_class.predict_convolve_fft_time(signal, kernel, mode: :same, boundary: :wrap)
-      expect(periodic).to be < linear
+      expect(periodic).to be > linear
     end
   end
 
