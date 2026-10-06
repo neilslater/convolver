@@ -184,7 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the native extension to use the maintained Numo C API and removed the
   legacy untyped-data compatibility code.
 
-[Unreleased]: https://github.com/neilslater/convolver/compare/v4.0.0...HEAD
+[4.0.1]: https://github.com/neilslater/convolver/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/neilslater/convolver/compare/v3.0.1...v4.0.0
 [3.0.1]: https://github.com/neilslater/convolver/compare/9c12a003b3b8675c9cbde0556c586da6635d872e...v3.0.1
 [3.0.0]: https://github.com/neilslater/convolver/compare/v2.0.0...9c12a003b3b8675c9cbde0556c586da6635d872e
