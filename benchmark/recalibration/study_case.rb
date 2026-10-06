@@ -11,7 +11,7 @@ module Recalibration
     def run
       methods = calls
       validate(methods)
-      validate_result(methods.fetch(:basic).call, methods.fetch(:prototype).call)
+      validate_prototypes(methods)
       metadata.merge(estimates).merge(diagnostics).merge(measure(methods))
     end
 
@@ -19,11 +19,17 @@ module Recalibration
 
     def calls
       { basic: invocation("#{@operation}_basic"), fft: invocation("#{@operation}_fft"),
-        automatic: invocation(@operation), prototype: method(:prototype_call) }
+        automatic: invocation(@operation), prototype: -> { prototype_call(Prototype) },
+        prototype90: -> { prototype_call(MarginPrototype) } }
     end
 
-    def prototype_call
-      Prototype.call(operation, @signal, @kernel, **@options)
+    def prototype_call(implementation)
+      implementation.call(operation, @signal, @kernel, **@options)
+    end
+
+    def validate_prototypes(methods)
+      reference = methods.fetch(:basic).call
+      %i[prototype prototype90].each { |method| validate_result(reference, methods.fetch(method).call) }
     end
 
     def measure(calls)
@@ -38,7 +44,8 @@ module Recalibration
 
     def diagnostics
       plan = new_plan
-      { selected: selected, prototype_selected: selected(prototype: true),
+      { selected: selected, prototype_selected: selected(prototype: Prototype),
+        prototype90_selected: selected(prototype: MarginPrototype),
         features: Features.new(@signal, @kernel, plan).capture,
         components: Components.new(operation, @signal, @kernel, plan, method(:new_plan)).run }
     end
@@ -52,14 +59,14 @@ module Recalibration
       Convolver.const_get(:OperationPlan).new(@signal, @kernel, operation:, **options.merge(@options))
     end
 
-    def selected(prototype: false)
+    def selected(prototype: nil)
       path = nil
       trace = TracePoint.new(:call) do |event|
         next unless event.defined_class == Convolver.const_get(:OperationExecution)
 
         path = event.method_id if %i[basic fft].include?(event.method_id)
       end
-      trace.enable { prototype ? prototype_call : invocation(@operation).call }
+      trace.enable { prototype ? prototype_call(prototype) : invocation(@operation).call }
       path
     end
   end

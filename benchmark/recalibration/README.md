@@ -47,3 +47,11 @@ The fixed tables are experimental evidence, not approved platform policy. See
 the local recalibration proposal for provenance, fitting method, comparison with
 a shared model, results, and remaining review decisions. A production change
 needs its own implementation and validation after proposal approval.
+
+The final comparison adds `prototype90`, changing only the FFT margin from 0.8
+to 0.9. The previous validation found repeatable lost FFT wins near the 0.8
+threshold on new runner CPUs. Coefficients stay frozen. Both prototype wrappers
+now also mirror the production private execution-factory call, so final timing
+and allocation comparisons include that dispatch layer. Earlier results did
+not include this extra wrapper call; do not mix their overhead figures with the
+final comparison. Both variants validate numerical results before timing.

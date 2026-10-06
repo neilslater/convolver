@@ -21,5 +21,6 @@ end
 
 puts JSON.pretty_generate(environment: Recalibration::Environment.capture, suite: suite,
                           prototype_profile: Recalibration::Profiles::CURRENT,
+                          prototype_margins: { prototype: 0.8, prototype90: 0.9 },
                           sampling: '3 warmup, 3 pilot, 7 interleaved batches targeting 6 ms; 3..400 calls; normal GC',
                           rows: rows)
