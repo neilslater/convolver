@@ -1,0 +1,42 @@
+name: Recalibration research
+
+on:
+  pull_request:
+    paths:
+      - 'benchmark/**'
+      - '.github/workflows/recalibration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    if: github.head_ref == 'recalibrate-auto-selection'
+    name: Research ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0.6'
+          bundler-cache: true
+      - name: Compile release extension
+        run: bundle exec rake compile
+      - name: Measure two fresh processes
+        run: |
+          mkdir -p research-results
+          for repeat in 1 2; do
+            bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/training-$repeat.json"
+            RECALIBRATION_SUITE=holdout bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/holdout-$repeat.json"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recalibration-${{ matrix.runner }}
+          path: research-results
+          if-no-files-found: error
+          retention-days: 14

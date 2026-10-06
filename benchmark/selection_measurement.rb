@@ -3,25 +3,28 @@
 module SelectionBenchmark
   # Median batch timings with interleaved methods and normal garbage collection.
   class Measurement
-    def initialize(calls)
+    def initialize(calls, samples: 5, duration: 0.004, maximum: 200)
       @calls = calls
+      @samples = samples
+      @duration = duration
+      @maximum = maximum
       @counts = calls.transform_values { |call| iterations(call) }
       @times = calls.transform_values { [] }
     end
 
     def run
-      5.times do |batch|
+      @samples.times do |batch|
         @calls.keys.rotate(batch).each { |key| @times[key] << (elapsed(@calls[key], @counts[key]) * 1e6) }
       end
-      { median_us: @times.transform_values { |values| values.sort[2] },
-        range_us: @times.transform_values(&:minmax), iterations: @counts }
+      { median_us: @times.transform_values { |values| values.sort[@samples / 2] },
+        range_us: @times.transform_values(&:minmax), iterations: @counts, samples_us: @times }
     end
 
     private
 
     def iterations(call)
       3.times { call.call }
-      (0.004 / elapsed(call, 3)).ceil.clamp(3, 200)
+      (@duration / elapsed(call, 3)).clamp(3, @maximum).ceil
     end
 
     def elapsed(call, count)
