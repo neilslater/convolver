@@ -7,6 +7,8 @@ require_relative 'recalibration/cases'
 require_relative 'recalibration/study_case'
 
 suite = ENV.fetch('RECALIBRATION_SUITE', 'training')
+raise ArgumentError, 'RECALIBRATION_SUITE must be training or holdout' unless %w[training holdout].include?(suite)
+
 definitions = suite == 'holdout' ? Recalibration::HOLDOUT : Recalibration::TRAINING
 rows = [Numo::SFloat, Numo::DFloat].product(%i[convolve correlate]).flat_map do |type, operation|
   definitions.map { |definition| Recalibration::StudyCase.new(definition, type, operation).run }
@@ -20,7 +22,6 @@ conversion_cases.each do |definition|
 end
 
 puts JSON.pretty_generate(environment: Recalibration::Environment.capture, suite: suite,
-                          prototype_profile: Recalibration::Profiles::CURRENT,
-                          prototype_margins: { prototype: 0.8, prototype90: 0.9 },
+                          cost_profile: Convolver.const_get(:CostProfiles)::CURRENT,
                           sampling: '3 warmup, 3 pilot, 7 interleaved batches targeting 6 ms; 3..400 calls; normal GC',
                           rows: rows)

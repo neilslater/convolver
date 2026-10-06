@@ -1,9 +1,12 @@
-name: Recalibration research
+name: Selection calibration
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'benchmark/**'
+      - 'lib/**'
+      - 'ext/**'
       - '.github/workflows/recalibration.yml'
 
 permissions:
@@ -11,8 +14,8 @@ permissions:
 
 jobs:
   measure:
-    if: github.head_ref == 'recalibrate-auto-selection'
-    name: Research ${{ matrix.runner }}
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'recalibrate-auto-selection'
+    name: Calibration ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     strategy:
@@ -27,8 +30,12 @@ jobs:
           bundler-cache: true
       - name: Compile release extension
         run: bundle exec rake compile
-      - name: Validate research prototype
-        run: CONVOLVER_DISABLE_SIMPLECOV=1 bundle exec rspec benchmark/recalibration/validation_spec.rb
+      - name: Validate calibration invariants
+        run: >-
+          CONVOLVER_DISABLE_SIMPLECOV=1 bundle exec rspec
+          spec/convolver/cost_profiles_spec.rb
+          spec/convolver/calibration_selection_spec.rb
+          spec/convolver/fft_cost_spec.rb
       - name: Measure two fresh processes
         run: |
           mkdir -p research-results

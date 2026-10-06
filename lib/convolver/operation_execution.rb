@@ -8,6 +8,7 @@ module Convolver
     DOUBLE_OPERATION_COST = { 1 => 3.9e-10, 2 => 6.0e-10, 3 => 4.6e-10 }.freeze
     LARGE_KERNEL_COST = 6.5e-10
     FFT_SPEEDUP_MARGIN = 0.8
+    CALIBRATED_FFT_SPEEDUP_MARGIN = 0.9
 
     def initialize(operation, signal, kernel, mode:, boundary:, fill_value:, origin:, dtype:)
       @operation = operation
@@ -23,7 +24,7 @@ module Convolver
     def automatic
       return basic if plan.result_shape.empty?
 
-      threshold = FFT_SPEEDUP_MARGIN * basic_time
+      threshold = fft_margin * basic_time
       return basic if FftCost.lower_bound(plan, kernel.shape, threshold:) >= threshold
       return fft if automatic_fft_time < threshold
 
@@ -52,7 +53,6 @@ module Convolver
 
     def basic_time
       plan.validate_basic!
-      calculation_cost = direct_operation_cost * plan.result_size * kernel.size
       calculation_cost + preparation_cost
     end
 
@@ -91,6 +91,26 @@ module Convolver
 
       costs = plan.dtype == Numo::DFloat ? DOUBLE_OPERATION_COST : DIRECT_OPERATION_COST
       costs.fetch(signal.ndim, costs.values.last)
+    end
+
+    def calculation_cost
+      return calibrated_calculation_cost if plan.cost_profile
+
+      direct_operation_cost * plan.result_size * kernel.size
+    end
+
+    def calibrated_calculation_cost
+      fixed, short, long = plan.cost_profile.fetch(:direct).fetch(plan.dtype == Numo::DFloat ? 1 : 0)
+      fixed + (kernel_work(short, long) * plan.result_size)
+    end
+
+    def kernel_work(short, long)
+      size = kernel.size
+      (short * [size, 64].min) + (long * [size - 64, 0].max)
+    end
+
+    def fft_margin
+      plan.cost_profile ? CALIBRATED_FFT_SPEEDUP_MARGIN : FFT_SPEEDUP_MARGIN
     end
   end
 

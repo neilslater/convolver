@@ -1,7 +1,8 @@
-# Recalibration research
+# Selection calibration
 
-This opt-in study leaves `lib/` and `ext/` behavior unchanged. After a release
-build, collect separate processes for fitting and validation:
+This repository-only diagnostic harness measures the current public direct, FFT
+and automatic methods. It is not loaded at runtime or shipped in the gem.
+After compiling a release build, collect separate processes:
 
 ```sh
 bundle exec ruby -Ilib benchmark/recalibration.rb > training.json
@@ -9,49 +10,38 @@ RECALIBRATION_SUITE=holdout bundle exec ruby -Ilib benchmark/recalibration.rb > 
 ```
 
 Repeat each command in a fresh process without concurrent benchmarks. The
-dedicated-branch research workflow collects two processes per suite on Linux
-x86 and arm64, using Ruby 4.0.6 on both. It runs only for relevant PR changes on
-`recalibrate-auto-selection`; regular CI remains unchanged. Reports expire after
-14 days, so preserve essential conditions, findings and limitations in the proposal.
+153-row training and 105-row holdout suites include both floating result types,
+both operations, integer conversion, views, ranks zero through five, boundary
+modes, awkward shapes, periodic folding, clear wins and crossover cases. Shapes
+were declared before the v4 calibration fit. For future recalibration, reserve
+new shapes too: these holdouts have already been used for v4 model validation.
 
-`cases.rb` declares training and holdout shapes before fitting. Keep holdout
-measurements out of coefficient fitting. `StudyCase` checks numerical agreement,
-observes dispatch through an untimed TracePoint, and records allocation counts
-outside timing. Seven interleaved batches target 6 ms each; the report includes
-all batch samples, medians, ranges and iteration counts. GC runs normally.
+Each case checks dtype, shape and numerical agreement before measuring complete
+public calls. Seven interleaved batches target 6 ms each, clamped to 3..400 calls,
+with normal GC. JSON contains all batch samples, medians, ranges, selected paths,
+estimates, separate allocation counts, work counts and CPU/build metadata.
+`cost_profile` records the current platform's table; scalar and higher-rank cases
+still use the legacy fallback. Compare automatic time to the faster explicit
+path per row and review subgroups and repeated outliers, not just pooled means.
+Timings are review evidence, never correctness pass/fail assertions.
 
 Component probes use prepared inputs and reusable plans/operations to isolate
-work. They deliberately omit setup that complete public calls perform, so do
-not add their timings together and call that a whole-call measurement. Folding
-preparation includes circular operation construction and required casts. Linear
-FFT execution includes padding and result materialization. CPU, compiler macros
-and extension Makefile flags distinguish host information from build assumptions.
+work. They omit setup that complete calls perform, so their timings cannot be
+summed into a whole-call estimate. Folding preparation includes circular
+operation construction and required casts. Linear FFT execution includes padding
+and result materialization. Keep lint/sanitizer/coverage builds out of timings.
 
-The second round adds a research-only `Prototype` subclass. It uses coefficients
-frozen from the first round's training data before inspecting holdout results.
-Production `lib/` and `ext/` remain unchanged. The prototype uses three measured
-OS/architecture profiles for ranks 1–3; unknown platforms, scalars and higher
-ranks retain the original model. All times are complete fresh invocations,
-including selection, planning and casting. Prototype and original calls share
-only immutable input arrays, not operation plans or prepared buffers.
-An additional Ubuntu 22.04 x86 job validates the same frozen profile on an
-older compiler; it supplies no coefficient-fitting data.
+The **Selection calibration** GitHub workflow can be run manually. It collects
+two fresh processes per suite on Ubuntu 24.04 x86/arm64 and Ubuntu 22.04 x86,
+using Ruby 4.0.6. During the v4 implementation it also runs for relevant changes
+on the `recalibrate-auto-selection` PR branch. Other PRs do not automatically
+consume this additional runner matrix. Normal CI retains the shorter selection
+benchmark. Reports expire after 14 days; preserve essential findings and limits
+in a decision record before they expire.
 
-Run its deterministic safety checks before collecting timings:
-
-```sh
-CONVOLVER_DISABLE_SIMPLECOV=1 bundle exec rspec benchmark/recalibration/validation_spec.rb
-```
-
-The fixed tables are experimental evidence, not approved platform policy. See
-the local recalibration proposal for provenance, fitting method, comparison with
-a shared model, results, and remaining review decisions. A production change
-needs its own implementation and validation after proposal approval.
-
-The final comparison adds `prototype90`, changing only the FFT margin from 0.8
-to 0.9. The previous validation found repeatable lost FFT wins near the 0.8
-threshold on new runner CPUs. Coefficients stay frozen. Both prototype wrappers
-now also mirror the production private execution-factory call, so final timing
-and allocation comparisons include that dispatch layer. Earlier results did
-not include this extra wrapper call; do not mix their overhead figures with the
-final comparison. Both variants validate numerical results before timing.
+The production coefficient tables live in `lib/convolver/cost_profiles.rb`.
+Do not maintain a second copy here. The v4 study's frozen prototypes and 0.8/0.9
+margin comparison are preserved at commit `16f27dd`; use that historical checkout
+to reproduce the original study. The maintained harness now tests actual public
+entry points. Profile detection, selection regressions, lower-bound inequalities,
+overflow, dtype and error behavior are covered by the normal `spec/` suite.

@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-module Recalibration
-  # Frozen before holdout inspection; seconds, derived from the first training round.
-  module Profiles
+module Convolver
+  # Immutable measured-environment coefficients in seconds; ranks one through three.
+  # @private
+  module CostProfiles
     MAC = {
       direct: [[6.55e-6, 3.24e-10, 7.08e-10].freeze, [6.55e-6, 3.24e-10, 7.08e-10].freeze].freeze,
       fixed: [1.64e-5, 5.12e-5, 1.13e-4].freeze,
@@ -24,10 +25,20 @@ module Recalibration
       indices: { reflect: 2.62e-7, nearest: 3.67e-7, mirror: 2.87e-7, wrap: 1.50e-7 }.freeze,
       folding: [9.97e-7, 8.80e-7, 1.24e-6].freeze
     }.freeze
-    CURRENT = case RUBY_PLATFORM
-              when /\Aarm64-darwin/ then MAC
-              when /\Ax86_64-linux/ then X86
-              when /\Aaarch64-linux/ then ARM
-              end
+    def self.for_platform(platform)
+      case platform
+      when /\Aarm64-darwin/ then MAC
+      when /\Ax86_64-linux/ then X86
+      when /\Aaarch64-linux/ then ARM
+      end
+    end
+
+    CURRENT = for_platform(RUBY_PLATFORM)
+
+    def self.for_rank(rank)
+      CURRENT if (1..3).cover?(rank)
+    end
   end
+
+  private_constant :CostProfiles
 end
