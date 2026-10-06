@@ -18,8 +18,21 @@ module Convolver
               expect_selection(method, type, [32, 32, 32], [15, 15, 15], fft: true)
             end
 
-            it 'accounts for platform and dtype in the 2D crossover' do
-              expect_selection(method, type, [64, 64], [16, 16], fft: name != :x86 || type == Numo::DFloat)
+            it 'accounts for platform in the smaller 2D crossover' do
+              expect_selection(method, type, [64, 64], [16, 16], fft: name != :x86)
+            end
+
+            it 'preserves double-precision FFT wins with larger 2D kernels' do
+              expect_selection(method, type, [64, 64], [32, 32], fft: name != :x86 || type == Numo::DFloat)
+            end
+
+            it 'accounts for setup costs on thin 2D arrays' do
+              expect_selection(method, type, [2, 1024], [1, 257], fft: name != :x86)
+            end
+
+            it 'accounts for setup costs with full 2D output' do
+              expect_selection(method, type, [48, 48], [17, 17],
+                               fft: name != :x86 || type == Numo::DFloat, mode: :full)
             end
 
             it 'accounts for the cost of periodic folding' do
@@ -41,13 +54,19 @@ module Convolver
       allow(Numo::Pocketfft).to receive(:rfftn).and_call_original
       signal, kernel = [signal_shape, kernel_shape].map { |shape| type.ones(*shape) }
       result = described_class.public_send(method, signal, kernel, **options)
-      expect_constant_result(result, type, kernel.size)
+      expect_numerical_result(result, expected_result(method, signal, kernel, result, options))
       expect(Numo::Pocketfft).to have_received(:rfftn).exactly(fft ? 2 : 0).times
     end
 
-    def expect_constant_result(result, type, value)
-      expect(result).to be_narray_like type.ones(*result.shape) * value
-      expect(result).to be_an_instance_of(type)
+    def expect_numerical_result(result, expected)
+      expect(result).to be_narray_like expected
+      expect(result).to be_an_instance_of(expected.class)
+    end
+
+    def expected_result(method, signal, kernel, result, options)
+      return described_class.public_send("#{method}_basic", signal, kernel, **options) if options[:mode] == :full
+
+      signal.class.ones(*result.shape) * kernel.size
     end
   end
 end

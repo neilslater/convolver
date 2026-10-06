@@ -42,6 +42,7 @@ jobs:
           for repeat in 1 2; do
             bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/training-$repeat.json"
             RECALIBRATION_SUITE=holdout bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/holdout-$repeat.json"
+            RECALIBRATION_SUITE=validation bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/validation-$repeat.json"
           done
       - uses: actions/upload-artifact@v4
         with:

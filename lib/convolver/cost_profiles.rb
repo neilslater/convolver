@@ -13,7 +13,7 @@ module Convolver
     }.freeze
     X86 = {
       direct: [[1.59e-5, 3.08e-10, 2.52e-10].freeze, [1.63e-5, 3.22e-10, 3.96e-10].freeze].freeze,
-      fixed: [3.77e-5, 8.70e-5, 1.98e-4].freeze,
+      fixed: [3.77e-5, 1.20e-4, 1.98e-4].freeze,
       transform: [2.00e-9, 2.13e-9, 3.13e-9].freeze,
       indices: { reflect: 2.32e-7, nearest: 2.88e-7, mirror: 2.62e-7, wrap: 1.11e-7 }.freeze,
       folding: [8.20e-7, 7.51e-7, 9.79e-7].freeze

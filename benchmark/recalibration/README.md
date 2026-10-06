@@ -7,6 +7,7 @@ After compiling a release build, collect separate processes:
 ```sh
 bundle exec ruby -Ilib benchmark/recalibration.rb > training.json
 RECALIBRATION_SUITE=holdout bundle exec ruby -Ilib benchmark/recalibration.rb > holdout.json
+RECALIBRATION_SUITE=validation bundle exec ruby -Ilib benchmark/recalibration.rb > validation.json
 ```
 
 Repeat each command in a fresh process without concurrent benchmarks. The
@@ -15,6 +16,9 @@ both operations, integer conversion, views, ranks zero through five, boundary
 modes, awkward shapes, periodic folding, clear wins and crossover cases. Shapes
 were declared before the v4 calibration fit. For future recalibration, reserve
 new shapes too: these holdouts have already been used for v4 model validation.
+The 32-row `validation` suite adds nearby 2D crossovers declared after the
+Intel-driven x86 setup correction was frozen. Report it separately from the
+older regression suites; it was not used to choose the correction.
 
 Each case checks dtype, shape and numerical agreement before measuring complete
 public calls. Seven interleaved batches target 6 ms each, clamped to 3..400 calls,
@@ -43,5 +47,8 @@ The production coefficient tables live in `lib/convolver/cost_profiles.rb`.
 Do not maintain a second copy here. The v4 study's frozen prototypes and 0.8/0.9
 margin comparison are preserved at commit `16f27dd`; use that historical checkout
 to reproduce the original study. The maintained harness now tests actual public
-entry points. Profile detection, selection regressions, lower-bound inequalities,
+entry points. Implementation validation subsequently raised the x86 rank-two
+FFT setup cost from 87 to 120 microseconds after an Intel runner exposed
+repeatable thin-array and small-2D outliers. Other profile terms stayed fixed.
+Profile detection, selection regressions, lower-bound inequalities,
 overflow, dtype and error behavior are covered by the normal `spec/` suite.

@@ -37,4 +37,16 @@ module Recalibration
     ['wrap-3d', [18, 20, 22], [7, 5, 3], { mode: :same, boundary: :wrap }],
     ['rank-four', [6, 8, 10, 12], [3, 3, 3, 3], {}]
   ].freeze
+
+  # Declared after freezing the Intel-driven setup correction; not used for fitting.
+  VALIDATION = [
+    ['new-thin', [3, 896], [1, 193], {}],
+    ['new-square-small', [72, 72], [15, 15], {}],
+    ['new-square-medium', [72, 72], [23, 23], {}],
+    ['new-square-large', [72, 72], [31, 31], {}],
+    ['new-awkward', [71, 83], [17, 19], {}],
+    ['new-full-small', [40, 56], [11, 17], { mode: :full }],
+    ['new-full-large', [72, 80], [23, 25], { mode: :full }],
+    ['new-reflect', [56, 72], [11, 13], { mode: :same, boundary: :reflect }]
+  ].freeze
 end
