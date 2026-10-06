@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'forwardable'
+require 'convolver/cost_profiles'
 require 'convolver/operation_dtype'
 require 'convolver/operation_options'
 require 'convolver/operation_shapes'
@@ -24,13 +25,14 @@ module Convolver
                    :extended_shape, :result_size, :extended_size, :linear_fft_shape,
                    :linear_fft_size, :linear_spectrum_size
 
-    attr_reader :conversion_size
+    attr_reader :conversion_size, :cost_profile
 
     def initialize(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:, dtype: nil)
       @options = OperationOptions.new(signal, kernel, operation:, mode:, boundary:, fill_value:, origin:, dtype:)
-      @conversion_size = [signal, kernel].sum { |input| input.instance_of?(self.dtype) ? 0 : input.size }
+      @conversion_size = input_conversion_size(signal, kernel)
       @signal_shape = signal.shape.freeze
       @kernel_shape = kernel.shape.freeze
+      @cost_profile = CostProfiles.for_rank(@signal_shape.length)
       @shapes = OperationShapes.new(
         signal.shape, kernel.shape, operation:, mode:, anchors: options.anchors
       )
@@ -64,6 +66,10 @@ module Convolver
     private
 
     attr_reader :options, :shapes
+
+    def input_conversion_size(signal, kernel)
+      [signal, kernel].sum { |input| input.instance_of?(dtype) ? 0 : input.size }
+    end
   end
 
   private_constant :OperationPlan, :UNSPECIFIED_FILL

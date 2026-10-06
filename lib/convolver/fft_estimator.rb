@@ -15,6 +15,7 @@ module Convolver
       @signal = signal
       @kernel = kernel
       @plan = plan
+      @profile = plan.cost_profile
       @buffers = plan.fft_buffers
       @preparation = PreparationCost.new(plan)
     end
@@ -30,8 +31,9 @@ module Convolver
     attr_reader :operation, :signal, :kernel, :plan, :buffers, :preparation
 
     def transform_cost
-      transform = FftCost.transform(buffers.transform_size, signal.ndim, real: !buffers.real_axis.nil?)
-      FftCost.fixed(signal.ndim) + transform + (AXIS_MOVE_COST * moved_size)
+      transform = FftCost.transform(buffers.transform_size, signal.ndim,
+                                    real: !buffers.real_axis.nil?, profile: @profile)
+      FftCost.fixed(signal.ndim, profile: @profile) + transform + (AXIS_MOVE_COST * moved_size)
     end
 
     def extra_cost

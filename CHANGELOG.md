@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - 2026-10-05
+## [4.0.0] - 2026-10-06
 
 ### Added
 
@@ -23,8 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reuse a single operation plan during automatic dispatch and account for
   selected dtype and input conversion in cost estimates and buffer checks.
 - Bound FFT shape search in native code and skip FFT planning when a cheap
-  cost bound already favors direct execution. Recalibrate selection for FFT
-  setup, long direct kernels, boundary indexing and periodic kernel folding.
+  cost bound already favors direct execution.
+- Calibrate direct/FFT selection for ranks one through three on arm64 macOS
+  and x86_64/aarch64 Linux, including dtype, fixed setup, continuous kernel
+  costs, boundary indexing and periodic folding. Retain the existing heuristic
+  on other platforms and higher ranks.
 
 ### Fixed
 

@@ -26,11 +26,15 @@ module Convolver
     def indices
       return 0.0 if plan.valid? || plan.boundary == :constant
 
-      INDEX_COST.fetch(plan.boundary) * plan.extended_shape.sum
+      costs = plan.cost_profile ? plan.cost_profile.fetch(:indices) : INDEX_COST
+      costs.fetch(plan.boundary) * plan.extended_shape.sum
     end
 
     def folding(kernel_size)
-      FOLD_COST.fetch(plan.result_shape.length, FOLD_COST.values.last) * kernel_size
+      rank = plan.result_shape.length
+      return plan.cost_profile.fetch(:folding).fetch(rank - 1) * kernel_size if plan.cost_profile
+
+      FOLD_COST.fetch(rank, FOLD_COST.values.last) * kernel_size
     end
 
     private

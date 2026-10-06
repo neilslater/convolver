@@ -1,0 +1,52 @@
+name: Selection calibration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'benchmark/**'
+      - 'lib/**'
+      - 'ext/**'
+      - '.github/workflows/recalibration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'recalibrate-auto-selection'
+    name: Calibration ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm, ubuntu-22.04]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0.6'
+          bundler-cache: true
+      - name: Compile release extension
+        run: bundle exec rake compile
+      - name: Validate calibration invariants
+        run: >-
+          CONVOLVER_DISABLE_SIMPLECOV=1 bundle exec rspec
+          spec/convolver/cost_profiles_spec.rb
+          spec/convolver/calibration_selection_spec.rb
+          spec/convolver/fft_cost_spec.rb
+      - name: Measure two fresh processes
+        run: |
+          mkdir -p research-results
+          for repeat in 1 2; do
+            bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/training-$repeat.json"
+            RECALIBRATION_SUITE=holdout bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/holdout-$repeat.json"
+            RECALIBRATION_SUITE=validation bundle exec ruby -Ilib benchmark/recalibration.rb > "research-results/validation-$repeat.json"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recalibration-${{ matrix.runner }}
+          path: research-results
+          if-no-files-found: error
+          retention-days: 14

@@ -4,6 +4,8 @@ require 'helpers'
 
 describe Convolver do
   describe 'circular FFT cost estimates' do
+    before { stub_const('Convolver::CostProfiles::CURRENT', nil) }
+
     it 'accounts for a real transform on the final even axis' do
       # Twelve spatial elements, one folded kernel element, and no axis movement.
       expected = 3e-5 + (1e-9 * 12 * Math.log(12)) + (1e-9 * 13) + (5e-10 * 12) + 3.7e-7
@@ -14,6 +16,11 @@ describe Convolver do
       final_axis = circular_estimate(:predict_convolve_fft_time, [3, 4])
       moved_axis = circular_estimate(:predict_convolve_fft_time, [4, 3])
       expect(moved_axis - final_axis).to be_within(1e-15).of(3 * 12 * 1.6e-9)
+    end
+
+    it 'retains the complex transform estimate for an all-odd circular shape' do
+      expected = 3e-5 + (2.4e-9 * 9 * Math.log(9)) + (1e-9 * 10) + (5e-10 * 9) + 3.7e-7
+      expect(circular_estimate(:predict_convolve_fft_time, [3, 3])).to be_within(1e-15).of(expected)
     end
 
     [[3, 4], [4, 3]].each do |shape|

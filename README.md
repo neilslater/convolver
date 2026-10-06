@@ -189,7 +189,9 @@ Convolver.predict_correlate_fft_time(signal, kernel, mode: :same, boundary: :wra
 
 Estimates are machine-dependent heuristics, including input conversion, boundary
 preparation and periodic kernel folding. Automatic selection avoids FFT planning
-when a cheap lower bound already favors direct calculation. Algorithm choices
+when a cheap lower bound already favors direct calculation. Ranks one through
+three use calibrated profiles on arm64 macOS and x86_64/aarch64 Linux; other
+platforms and higher ranks retain the general heuristic. Algorithm choices
 can change as estimates improve; benchmark the explicit methods for workloads
 where the choice matters.
 

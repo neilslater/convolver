@@ -19,3 +19,7 @@ median and 90th-percentile ratios and individual outliers; shared CI machines
 are noisy, so timings are evidence rather than a pass/fail gate. The Ruby 4.0 CI
 job uploads this report from its release build. Native lint, coverage and
 sanitizer builds are unsuitable for performance calibration.
+
+For repeated measurements with reserved shapes, allocation diagnostics and
+component probes, use the [calibration harness](recalibration/README.md).
+These development tools are retained in the repository and excluded from the gem.

@@ -11,23 +11,33 @@ module Convolver
     FIXED = { 0 => 5.0e-6, 1 => 1.5e-5, 2 => 3.0e-5, 3 => 1.0e-4 }.freeze
     PREPARATION = 1.0e-9
 
-    def self.fixed(rank)
+    def self.fixed(rank, profile: nil)
+      return profile.fetch(:fixed).fetch(rank - 1) if profile
+
       FIXED.fetch(rank, FIXED.values.last)
     end
 
-    def self.transform(size, rank, real: true)
-      costs = real ? REAL : COMPLEX
-      costs.fetch(rank, costs.values.last) * size * Math.log([size, 2].max)
+    def self.transform(size, rank, real: true, profile: nil)
+      coefficient(rank, real:, profile:) * size * Math.log([size, 2].max)
     end
 
     def self.lower_bound(plan, kernel_shape, threshold:)
       rank = kernel_shape.length
-      setup = fixed(rank)
+      profile = plan.cost_profile
+      setup = fixed(rank, profile:)
       return setup if setup >= threshold || plan.wrap? || rank.zero?
 
       size = minimum_size(plan.extended_shape, kernel_shape)
-      setup + transform(size, rank) + (2 * PREPARATION * size) + PreparationCost.new(plan).indices
+      setup + transform(size, rank, profile:) + (2 * PREPARATION * size) + PreparationCost.new(plan).indices
     end
+
+    def self.coefficient(rank, real:, profile:)
+      return profile.fetch(:transform).fetch(rank - 1) * (real ? 1 : 2.2) if profile
+
+      costs = real ? REAL : COMPLEX
+      costs.fetch(rank, costs.values.last)
+    end
+    private_class_method :coefficient
 
     def self.minimum_size(signal_shape, kernel_shape)
       # Ruby integers avoid overflow: this is only a cost bound, never an allocation.
