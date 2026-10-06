@@ -26,3 +26,24 @@ not add their timings together and call that a whole-call measurement. Folding
 preparation includes circular operation construction and required casts. Linear
 FFT execution includes padding and result materialization. CPU, compiler macros
 and extension Makefile flags distinguish host information from build assumptions.
+
+The second round adds a research-only `Prototype` subclass. It uses coefficients
+frozen from the first round's training data before inspecting holdout results.
+Production `lib/` and `ext/` remain unchanged. The prototype uses three measured
+OS/architecture profiles for ranks 1–3; unknown platforms, scalars and higher
+ranks retain the original model. All times are complete fresh invocations,
+including selection, planning and casting. Prototype and original calls share
+only immutable input arrays, not operation plans or prepared buffers.
+An additional Ubuntu 22.04 x86 job validates the same frozen profile on an
+older compiler; it supplies no coefficient-fitting data.
+
+Run its deterministic safety checks before collecting timings:
+
+```sh
+CONVOLVER_DISABLE_SIMPLECOV=1 bundle exec rspec benchmark/recalibration/validation_spec.rb
+```
+
+The fixed tables are experimental evidence, not approved platform policy. See
+the local recalibration proposal for provenance, fitting method, comparison with
+a shared model, results, and remaining review decisions. A production change
+needs its own implementation and validation after proposal approval.

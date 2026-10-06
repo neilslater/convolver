@@ -3,18 +3,28 @@
 require_relative '../selection_case'
 require_relative 'features'
 require_relative 'components'
+require_relative 'prototype'
 
 module Recalibration
   # Complete public calls, metadata and separate diagnostic probes for one input pair.
   class StudyCase < SelectionBenchmark::Case
     def run
-      calls = { basic: invocation("#{@operation}_basic"), fft: invocation("#{@operation}_fft"),
-                automatic: invocation(@operation) }
-      validate(calls)
-      metadata.merge(estimates).merge(diagnostics).merge(measure(calls))
+      methods = calls
+      validate(methods)
+      validate_result(methods.fetch(:basic).call, methods.fetch(:prototype).call)
+      metadata.merge(estimates).merge(diagnostics).merge(measure(methods))
     end
 
     private
+
+    def calls
+      { basic: invocation("#{@operation}_basic"), fft: invocation("#{@operation}_fft"),
+        automatic: invocation(@operation), prototype: method(:prototype_call) }
+    end
+
+    def prototype_call
+      Prototype.call(operation, @signal, @kernel, **@options)
+    end
 
     def measure(calls)
       allocations = calls.transform_values do |call|
@@ -28,7 +38,8 @@ module Recalibration
 
     def diagnostics
       plan = new_plan
-      { selected: selected, features: Features.new(@signal, @kernel, plan).capture,
+      { selected: selected, prototype_selected: selected(prototype: true),
+        features: Features.new(@signal, @kernel, plan).capture,
         components: Components.new(operation, @signal, @kernel, plan, method(:new_plan)).run }
     end
 
@@ -41,14 +52,14 @@ module Recalibration
       Convolver.const_get(:OperationPlan).new(@signal, @kernel, operation:, **options.merge(@options))
     end
 
-    def selected
+    def selected(prototype: false)
       path = nil
       trace = TracePoint.new(:call) do |event|
         next unless event.defined_class == Convolver.const_get(:OperationExecution)
 
         path = event.method_id if %i[basic fft].include?(event.method_id)
       end
-      trace.enable { invocation(@operation).call }
+      trace.enable { prototype ? prototype_call : invocation(@operation).call }
       path
     end
   end

@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        runner: [ubuntu-24.04, ubuntu-24.04-arm, ubuntu-22.04]
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
@@ -27,6 +27,8 @@ jobs:
           bundler-cache: true
       - name: Compile release extension
         run: bundle exec rake compile
+      - name: Validate research prototype
+        run: CONVOLVER_DISABLE_SIMPLECOV=1 bundle exec rspec benchmark/recalibration/validation_spec.rb
       - name: Measure two fresh processes
         run: |
           mkdir -p research-results

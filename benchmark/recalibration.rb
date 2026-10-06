@@ -20,5 +20,6 @@ conversion_cases.each do |definition|
 end
 
 puts JSON.pretty_generate(environment: Recalibration::Environment.capture, suite: suite,
+                          prototype_profile: Recalibration::Profiles::CURRENT,
                           sampling: '3 warmup, 3 pilot, 7 interleaved batches targeting 6 ms; 3..400 calls; normal GC',
                           rows: rows)
