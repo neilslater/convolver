@@ -2,7 +2,7 @@
 
 require 'convolver/buffer_limits'
 
-# Internal allocation and arithmetic checks for the PocketFFT paths.
+# @!macro convolver_overview
 module Convolver
   # Only FFT representability failures permit automatic direct fallback.
   # @private

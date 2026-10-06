@@ -6,6 +6,8 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'bundler-audit', '~> 0.9', require: false
+# YARD's native-source parser loads irb/notifier, a bundled gem on Ruby 4.
+gem 'irb', require: false
 gem 'ncs_rubocop_conf',
     github: 'neilslater/ncs_rubocop_conf',
     tag: 'v0.3.0',

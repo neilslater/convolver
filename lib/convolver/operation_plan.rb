@@ -8,7 +8,7 @@ require 'convolver/operation_shapes'
 require 'convolver/signal_extension'
 require 'convolver/fft_buffer_plan'
 
-# Internal planning and extension support for Convolver's public operations.
+# @!macro convolver_overview
 module Convolver
   # Distinguishes an omitted fill_value keyword from an explicitly supplied
   # value. This lets non-constant boundaries reject even an explicit zero.

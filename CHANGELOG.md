@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-10-06
+
+### Added
+
+- Packaged Markdown references for calculation rules and terminology.
+- `rake docs:build` to generate linked API and reference pages; the existing
+  documentation gate also builds the pages and checks local links and anchors.
+
+### Changed
+
+- Explain public methods through purpose and worked examples, with shared
+  option rules and clear precision, alignment and memory-limit descriptions.
+- Shorten README around common usage and preserve detailed rules in the reference.
+  Calculation behavior, supported inputs and method signatures are unchanged.
+
+### Fixed
+
+- Preserve the public module overview in generated documentation, clarify valid
+  convolution indexing, and correct inherited method/error descriptions.
+- Repair changelog comparison links, using the original source commit for the
+  untagged 3.0.0 version.
+
 ## [4.0.0] - 2026-10-06
 
 ### Added
@@ -162,8 +184,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the native extension to use the maintained Numo C API and removed the
   legacy untyped-data compatibility code.
 
-[Unreleased]: https://github.com/neilslater/convolver/compare/v3.0.1...HEAD
-[3.0.0]: https://github.com/neilslater/convolver/compare/v2.0.0...v3.0.0
+[Unreleased]: https://github.com/neilslater/convolver/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/neilslater/convolver/compare/v3.0.1...v4.0.0
+[3.0.1]: https://github.com/neilslater/convolver/compare/9c12a003b3b8675c9cbde0556c586da6635d872e...v3.0.1
+[3.0.0]: https://github.com/neilslater/convolver/compare/v2.0.0...9c12a003b3b8675c9cbde0556c586da6635d872e
 [2.0.0]: https://github.com/neilslater/convolver/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/neilslater/convolver/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/neilslater/convolver/compare/v0.3.2...v1.0.0

@@ -3,13 +3,12 @@
 [![CI](https://github.com/neilslater/convolver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/neilslater/convolver/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/convolver.svg)](https://badge.fury.io/rb/convolver)
 
-Convolver calculates mathematical convolution and cross-correlation between
-multidimensional
-[`Numo::NArray`](https://github.com/yoshoku/numo-narray-alt) values. Both
-operations support configurable output extents and signal boundary extensions.
-Convolver chooses between a direct native implementation for smaller inputs
-and a [`Numo::Pocketfft`](https://github.com/yoshoku/numo-pocketfft)-based
-implementation for larger inputs.
+Convolver combines numeric sequences or grids with a kernel of weights. Use it
+for operations such as smoothing readings, applying an image filter or matching
+a pattern. Inputs are [`Numo::NArray`](https://github.com/yoshoku/numo-narray-alt)
+arrays. Convolver chooses between direct calculation and
+[`PocketFFT`](https://github.com/yoshoku/numo-pocketfft) transforms using estimates
+of their cost.
 
 ## Installation
 
@@ -19,188 +18,97 @@ Add Convolver to your application's Gemfile:
 gem 'convolver'
 ```
 
-Then run `bundle install`, or install the gem directly with
-`gem install convolver`. No external FFT library is required; PocketFFT is
-bundled by its Ruby gem.
+Then run `bundle install`, or install it directly with `gem install convolver`.
+Ruby 3.3 or newer and a toolchain able to build native extensions are required.
+No external FFT library is needed; PocketFFT is bundled by its Ruby gem.
 
-## Usage
+## Start with a small example
 
-`convolve` calculates mathematical discrete convolution. `correlate`
-calculates cross-correlation, following the public naming convention used by
-NumPy and SciPy:
+A kernel assigns a weight to each value in a moving window. Convolution reverses
+those weights within the window; cross-correlation keeps their stored order.
+Pass the original kernel to either method.
 
 ```ruby
 require 'convolver'
 
-signal = Numo::SFloat[0.3, 0.4, 0.5]
-kernel = Numo::SFloat[1.3, -0.5]
+signal = Numo::DFloat[1, 2, 4, 8, 16]
+kernel = Numo::DFloat[1, 2, 3]
 
-Convolver.convolve(signal, kernel)
-# => Numo::SFloat#shape=[2]
-#    [0.37, 0.45]
-
-Convolver.correlate(signal, kernel)
-# => Numo::SFloat#shape=[2]
-#    [0.19, 0.27]
+Convolver.convolve(signal, kernel).to_a  # => [11.0, 22.0, 44.0]
+Convolver.correlate(signal, kernel).to_a # => [17.0, 34.0, 68.0]
 ```
 
-For real one-dimensional inputs, the two valid operations are:
+The first convolution result is `1*3 + 2*2 + 4*1 = 11`. The corresponding
+correlation result is `1*1 + 2*2 + 4*3 = 17`. Neither method modifies its inputs.
 
-```text
-correlate(signal, kernel)[p] = sum_j signal[p + j] * conjugate(kernel[j])
-convolve(signal, kernel)[n]  = sum_j signal[n - j] * kernel[j]
-```
+Use `convolve` for mathematical convolution, such as applying a smoothing kernel
+or combining independent probability distributions. Use `correlate` to compare
+windows with a pattern. Correlation here is a sum of products, not a normalized
+correlation coefficient.
 
-The formulas apply component-wise to multidimensional arrays. Correlation
-conventionally conjugates the second operand, although Convolver's current
-real input contract makes conjugation invisible.
+## Keep the input size or include the edges
 
-With no keywords, the signal and kernel must have the same rank, the kernel
-must be no larger than the signal in any dimension, and only positions with
-complete overlap are returned. Both inputs determine the floating result dtype,
-or you can select it explicitly with `dtype:`.
+By default, Convolver returns only complete windows. `mode:` changes the output
+size along each dimension, where `S` is the signal size and `K` the kernel size:
 
-The automatic, direct, and FFT implementations are available for both
-operations:
-
-```ruby
-Convolver.convolve(signal, kernel)
-Convolver.convolve_basic(signal, kernel)
-Convolver.convolve_fft(signal, kernel)
-
-Convolver.correlate(signal, kernel)
-Convolver.correlate_basic(signal, kernel)
-Convolver.correlate_fft(signal, kernel)
-```
-
-Every calculation method accepts the same options:
-
-```ruby
-Convolver.convolve(signal, kernel,
-                   mode: :same,
-                   boundary: :reflect,
-                   origin: 0)
-```
-
-### Input and result precision
-
-`dtype:` accepts `Numo::SFloat`, `Numo::DFloat`, or `nil` (automatic, the
-default). Automatic selection maps each input type using this table, then
-chooses DFloat if either input maps to DFloat, otherwise SFloat:
-
-| Input type | Automatic floating type |
-| --- | --- |
-| `SFloat`, `Int8`, `UInt8`, `Int16`, `UInt16` | `Numo::SFloat` |
-| `DFloat`, `Int32`, `UInt32`, `Int64`, `UInt64` | `Numo::DFloat` |
-
-The input type names above are classes in `Numo`. Both operands must be instances
-of these concrete classes. Bit, RObject, complex arrays, custom subclasses and
-ordinary Ruby arrays are rejected, even with an explicit `dtype:`. Integer
-results and complex arithmetic are not supported.
-
-```ruby
-signal = Numo::SFloat[1, 2, 3]
-kernel = Numo::DFloat[0.25, 0.75]
-Convolver.convolve(signal, kernel)                     # DFloat result
-Convolver.convolve(signal, kernel, dtype: Numo::SFloat) # SFloat result
-```
-
-Both inputs are cast to the selected dtype before extension, folding or
-arithmetic. Inputs are never mutated. `fill_value` is cast to this same dtype
-and never promotes the result. Ordinary floating conversion applies, including
-rounding, overflow to infinity and underflow; NaN and infinity are not rejected.
-Non-finite propagation and rounding can differ between algorithms.
-
-Direct products and accumulation use the selected precision. PocketFFT uses
-double-precision working buffers for either result dtype. The returned class
-is independent of algorithm selection. Integer inputs become approximate
-floating computations: DFloat represents every 32-bit integer, but not every
-64-bit integer, and neither dtype guarantees exact integer convolution.
-
-### Output modes
-
-`mode:` controls the returned extent independently in each dimension:
-
-| Mode | Meaning | Result size |
+| Mode | Positions included | Result size |
 | --- | --- | --- |
-| `:valid` | Kernel overlaps the stored signal completely | `S - K + 1` |
-| `:same` | One result aligned with each stored signal position | `S` |
-| `:full` | Every kernel position with any stored-signal overlap | `S + K - 1` |
+| `:valid` (default) | Complete windows inside the signal | `S - K + 1` |
+| `:same` | One output for each signal position | `S` |
+| `:full` | All positions with any signal overlap | `S + K - 1` |
 
-`:valid` is the default and accepts only the default `boundary: :constant`,
-`fill_value: 0.0`, and `origin: 0`. `:full` supports constant extension only.
-`:same` supports every boundary described below. Kernels larger than the signal
-are supported by `:same` and `:full`, but not by `:valid`. `mode:` and
-`boundary:` accept only the symbols listed here.
-
-### Boundary extension
-
-For a one-dimensional signal `a b c d`, `boundary:` selects values outside the
-stored signal:
-
-| Boundary | Extended sequence |
-| --- | --- |
-| `:constant` | `k k k k | a b c d | k k k k` |
-| `:nearest` | `a a a a | a b c d | d d d d` |
-| `:reflect` | `d c b a | a b c d | d c b a` |
-| `:mirror` | `d c b | a b c d | c b a` |
-| `:wrap` | `a b c d | a b c d | a b c d` |
-
-`fill_value:` sets `k` for `:constant` and defaults to zero. It must not be
-passed with another boundary. `:reflect` repeats the edge sample; `:mirror`
-does not. All boundary modes work across every dimension, including
-length-one axes and extensions wider than the stored signal.
-
-### Kernel origin and alignment
-
-`origin:` shifts the stored-kernel anchor for `:same`. It accepts one integer
-applied to every dimension or an array with one integer per dimension. For a
-kernel dimension of length `K`:
-
-```text
-anchor = floor(K / 2) + origin
-
-correlation[i] = sum_j extended_signal[i + j - anchor] * kernel[j]
-convolution[i] = sum_j extended_signal[i + anchor - j] * kernel[j]
-```
-
-The anchor must remain within the kernel. Correlation pads `anchor` samples
-before the signal and `K - 1 - anchor` after it; convolution swaps those
-widths. Odd centered kernels therefore align alike. For an even centered
-kernel, correlation puts the extra sample before the signal and convolution
-puts it after the signal. Positive origins move correlation toward lower signal
-indices and convolution toward higher signal indices.
-
-Nonzero origins are supported only for `:same`; `:valid` and `:full` require
-zero.
-
-### Estimators
-
-The estimator methods accept and validate the same options as their calculation
-families:
+For example, a centered moving average can keep the input size and reflect
+values at the edges:
 
 ```ruby
-Convolver.predict_convolve_basic_time(signal, kernel, mode: :same, boundary: :nearest)
-Convolver.predict_convolve_fft_time(signal, kernel, mode: :same, boundary: :wrap)
-
-Convolver.predict_correlate_basic_time(signal, kernel, mode: :same, boundary: :nearest)
-Convolver.predict_correlate_fft_time(signal, kernel, mode: :same, boundary: :wrap)
+signal = Numo::DFloat[1, 2, 4, 8, 16]
+kernel = Numo::DFloat.ones(3) / 3
+smoothed = Convolver.convolve(signal, kernel, mode: :same, boundary: :reflect)
+smoothed.shape # => [5]
+smoothed.to_a.map { |value| value.round(3) } # => [1.333, 2.333, 4.667, 9.333, 13.333]
 ```
 
-Estimates are machine-dependent heuristics, including input conversion, boundary
-preparation and periodic kernel folding. Automatic selection avoids FFT planning
-when a cheap lower bound already favors direct calculation. Ranks one through
-three use calibrated profiles on arm64 macOS and x86_64/aarch64 Linux; other
-platforms and higher ranks retain the general heuristic. Algorithm choices
-can change as estimates improve; benchmark the explicit methods for workloads
-where the choice matters.
+Boundary choices are constant fill, nearest value, reflection with or without
+repeating the endpoint, and periodic wrap. `:same` supports all of them;
+`:full` supports constant fill only. For nonconstant boundaries, omit
+`fill_value:` entirely, even when its value would be zero.
 
-Calculations and estimators reject unrepresentable buffer sizes with `RangeError`
-before allocation. FFT planning also checks conservative PocketFFT integer and
-work-buffer limits, including full complex staging for real inverse transforms.
-Automatic selection uses direct calculation when FFT exceeds its limits and the
-direct path remains valid. These checks do not reserve memory; ordinary allocator
-exhaustion still raises `NoMemoryError`.
+The [calculation rules](docs/rules.md) show each boundary, allowed option
+combinations, and how `origin:` aligns odd- and even-length kernels.
+
+## Choose precision and calculation path
+
+The result is `Numo::SFloat` or `Numo::DFloat`, chosen from both inputs.
+`dtype: nil` means automatic selection; either floating class can be requested
+explicitly:
+
+```ruby
+signal = Numo::DFloat[1, 2, 4]
+kernel = Numo::DFloat[1, 2]
+Convolver.convolve(signal, kernel, dtype: Numo::SFloat).class # => Numo::SFloat
+```
+
+Integer inputs are accepted according to the supported-class table in the
+rules, but results and arithmetic are floating-point. Convert to a floating
+array before dividing to make kernel weights. A later `dtype:` override cannot
+recover information already lost to integer division or rounding.
+
+Start with `convolve` or `correlate` for automatic selection. To request a
+particular path, use `convolve_basic` / `correlate_basic` for direct calculation
+or `convolve_fft` / `correlate_fft` for FFT calculation. Both return the same
+shape and class; rounding can differ, so compare values with suitable tolerances.
+Neither automatic selection nor the `predict_*_time` estimates guarantee the
+fastest method or a measured running time.
+
+## Reference documentation
+
+- [Input and calculation rules](docs/rules.md): exact supported classes,
+  precision, output formulas, boundaries, alignment, estimates and memory limits.
+- [Terminology](docs/terminology.md): explanations of the words used in the API.
+
+These reference files are included in the gem. From a development checkout,
+`bundle exec rake docs:build` builds the API reference and these pages together
+in `doc/index.html`.
 
 ### Migrating from version 3
 
@@ -249,8 +157,9 @@ bundle exec rake docs:check
 The Ruby specs exercise both the Ruby API and native extension and enforce 95%
 line and branch coverage for the Ruby library. Dependency auditing refreshes
 the advisory database and requires network access. The documentation check
-rejects YARD warnings and undocumented public API objects; private implementation
-classes are marked `@private`. Additional native-code checks are available:
+builds the linked pages in `doc/`, checks local link destinations and anchors,
+and rejects YARD warnings and undocumented public API objects. Private
+implementation classes are marked `@private`. Additional native-code checks are available:
 
 ```sh
 bundle exec rake c:coverage  # Requires GCC and gcovr
