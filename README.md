@@ -23,6 +23,14 @@ Then run `bundle install`, or install the gem directly with
 `gem install convolver`. No external FFT library is required; PocketFFT is
 bundled by its Ruby gem.
 
+## Reference documentation
+
+- [Input and calculation rules](docs/rules.md): supported arrays, precision,
+  output sizes, boundaries, alignment and estimates.
+- [Terminology](docs/terminology.md): explanations of the words used in the API.
+
+These reference files are also included in the gem.
+
 ## Usage
 
 `convolve` calculates mathematical discrete convolution. `correlate`

@@ -19,7 +19,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'numo-narray-alt', '>= 0.9.9', '< 0.12'
   spec.add_dependency 'numo-pocketfft', '>= 0.7.0', '< 0.8'
 
-  spec.files         = Dir['CHANGELOG.md', 'LICENSE.txt', 'README.md', 'lib/**/*.rb', 'ext/**/*.{c,h,rb}']
+  spec.files         = Dir['CHANGELOG.md', 'LICENSE.txt', 'README.md', 'docs/rules.md',
+                           'docs/terminology.md', 'lib/**/*.rb', 'ext/**/*.{c,h,rb}']
   spec.extensions    = spec.files.grep(%r{/extconf\.rb$})
   spec.require_paths = ['lib']
   spec.metadata['rubygems_mfa_required'] = 'true'
